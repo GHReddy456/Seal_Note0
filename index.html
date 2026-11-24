@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TTY//FEEL — Encrypted Emotional ASCII Messaging</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body class="crt-enabled">
+  <div class="ambient-bg" aria-hidden="true"></div>
+  <div class="grid-overlay" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-lockup">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span class="brand-badge">TTY//FEEL</span>
+      </div>
+      <span id="brandSubtitle" class="brand-sub">Encrypted messages, felt in ASCII cinema</span>
+    </div>
+
+    <nav id="modeTabs" class="mode-tabs" aria-label="Primary modes">
+      <button id="tabEncode" class="tab-btn active" type="button">&gt; ENCODE</button>
+      <button id="tabDecode" class="tab-btn" type="button">&gt; DECODE</button>
+    </nav>
+
+    <div class="topbar-controls">
+      <button id="toggleSound" class="icon-btn" type="button" title="Toggle ambient synth audio">
+        <span id="soundIcon">♪</span> <span id="soundLabel">Sound: ON</span>
+      </button>
+      <button id="toggleCrt" class="icon-btn" type="button" title="Toggle CRT scanline effect">
+        CRT: ON
+      </button>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- ==================== ENCODE VIEW ==================== -->
+    <section id="encodeView" class="panel">
+      <div class="hero-strip">
+        <div>
+          <div class="eyebrow">CIPHER STUDIO · 8 EMOTIONAL TERMINAL FILMS</div>
+          <h1>Craft a Secret Emotional Message</h1>
+          <p class="subtitle">
+            Turn your message into an unreadable cipher code — with or without a secret key. When decoded, your receiver experiences a multi-act ASCII terminal story tailored to your feeling before the words appear.
+          </p>
+        </div>
+        <div class="hero-badge-card">
+          <span class="hero-badge-title">KEY OPTIONAL</span>
+          <span class="hero-badge-sub">Open code or AES-256 lock</span>
+        </div>
+      </div>
+
+      <div class="encode-grid">
+        <!-- Left column: Emotion cards + Live ASCII Mini Cinema -->
+        <div class="left-studio">
+          <div class="field-group">
+            <div class="label-row">
+              <label>1. Choose the Emotion</label>
+              <span id="selectedEmotionPill" class="mini-emotion-pill">♥ Love</span>
+            </div>
+            <div id="emotionGrid" class="emotion-grid" role="radiogroup" aria-label="Select emotion"></div>
+          </div>
+
+          <div class="mini-preview-card">
+            <div class="mini-preview-bar">
+              <div class="mini-preview-title">
+                <span class="live-dot"></span>
+                <span>LIVE ASCII STAGE</span>
+                <span id="miniPreviewAct" class="mono-muted">ACT I</span>
+              </div>
+              <button id="previewEmotionBtn" class="mini-action-btn" type="button">▶ Watch Full Film</button>
+            </div>
+            <div class="mini-stage-wrap">
+              <pre id="livePreviewScreen" class="ascii-screen mini-ascii-screen" aria-label="Live preview of selected emotion"></pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right column: Message composer & encrypted code -->
+        <div class="field-column compose-card">
+          <div class="field-group">
+            <div class="label-row">
+              <label for="messageInput">2. Write Your Secret Message</label>
+              <span id="charCount" class="mono-muted">0 chars</span>
+            </div>
+            <textarea
+              id="messageInput"
+              rows="6"
+              placeholder="Write something they'll feel before they even finish reading..."
+            ></textarea>
+          </div>
+
+          <div class="two-col">
+            <div class="field-group">
+              <label for="senderInput">From (optional signature)</label>
+              <input id="senderInput" type="text" maxlength="40" placeholder="e.g. Alex" />
+            </div>
+
+            <div class="field-group">
+              <div class="label-row">
+                <label for="encodeKeyInput">3. Secret Key <span class="optional-tag">(Optional)</span></label>
+                <button id="genKeyBtn" class="link-btn" type="button">✦ Generate key</button>
+              </div>
+              <div class="input-with-btn">
+                <input id="encodeKeyInput" type="password" placeholder="Leave blank for no key" />
+                <button class="peek-btn" data-peek="encodeKeyInput" type="button" title="Show/Hide key">Show</button>
+              </div>
+            </div>
+          </div>
+
+          <p class="helper-note">
+            Leave Secret Key blank to create an instant open code anyone with the link or code can unlock, or add a passphrase to lock it with AES-256 encryption.
+          </p>
+
+          <div class="special-modes-box">
+            <div class="special-mode-row">
+              <div class="field-group">
+                <div class="label-row">
+                  <label for="unlockAtInput">⏳ Time Capsule <span class="optional-tag">(Open After Date)</span></label>
+                  <div class="preset-chips">
+                    <button type="button" class="chip-btn" data-unlock-preset="clear">None</button>
+                    <button type="button" class="chip-btn" data-unlock-preset="15s">+15s Test</button>
+                    <button type="button" class="chip-btn" data-unlock-preset="midnight">Midnight</button>
+                  </div>
+                </div>
+                <input id="unlockAtInput" type="datetime-local" />
+                <span id="unlockPresetNote" class="mono-muted"></span>
+              </div>
+
+              <label class="burn-toggle-card" for="burnToggle">
+                <input id="burnToggle" type="checkbox" />
+                <div>
+                  <div class="burn-title">🔥 Burn After Reading</div>
+                  <div class="burn-sub">Dissolves into drifting ASCII ash after viewing once</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="action-row">
+            <button id="encryptBtn" class="primary-btn" type="button">
+              ✦ Create Secret Code
+            </button>
+            <span id="encodeError" class="error-text" role="alert"></span>
+          </div>
+
+          <div id="encodedOutputBox" class="output-box hidden">
+            <div class="output-header">
+              <span id="outputModeBadge" class="mono-accent">● PAYLOAD READY</span>
+              <span id="payloadStats" class="mono-muted"></span>
+            </div>
+            <pre id="encodedToken" class="token-display"></pre>
+            <div class="output-actions">
+              <button id="copyCodeBtn" class="secondary-btn" type="button">Copy Code</button>
+              <button id="copyLinkBtn" class="secondary-btn" type="button">Copy Share Link</button>
+              <button id="testDecodeBtn" class="ghost-btn" type="button">Unlock in Decoder →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== DECODE VIEW ==================== -->
+    <section id="decodeView" class="panel hidden">
+      <div class="hero-strip">
+        <div>
+          <div class="eyebrow">DECRYPTION VAULT · READY FOR UNLOCK</div>
+          <h1>Unlock a Secret Terminal Story</h1>
+          <p class="subtitle">
+            Paste the code you received. Open codes unlock immediately — key-locked codes need the sender's secret passphrase.
+          </p>
+        </div>
+        <div class="hero-badge-card">
+          <span class="hero-badge-title">TTY TERMINAL</span>
+          <span class="hero-badge-sub">17s multi-act ASCII cinema</span>
+        </div>
+      </div>
+
+      <div id="decodeLayout" class="decode-layout">
+        <div class="decode-card">
+          <div id="decodeCodeGroup" class="field-group">
+            <div class="label-row">
+              <label for="decodeCodeInput">1. Paste Secret Code</label>
+              <span id="decodeCodeStatus" class="mono-muted">Waiting for code...</span>
+            </div>
+            <textarea
+              id="decodeCodeInput"
+              rows="4"
+              class="mono-input"
+              placeholder="TTY0.... or TTY1...."
+            ></textarea>
+          </div>
+
+          <div id="receiverLoadedBanner" class="receiver-banner hidden">
+            <div class="receiver-banner-top">
+              <span class="mono-accent">✦ SECRET MESSAGE RECEIVED</span>
+              <button id="toggleRawCodeBtn" class="link-btn" type="button">View code</button>
+            </div>
+            <p id="receiverBannerText" class="receiver-banner-sub">
+              An encrypted emotional terminal film is waiting for you.
+            </p>
+          </div>
+
+          <div id="decodeKeyGroup" class="field-group">
+            <label for="decodeKeyInput">2. Secret Key <span class="optional-tag">(Only needed if code is locked)</span></label>
+            <div class="input-with-btn">
+              <input id="decodeKeyInput" type="password" placeholder="Optional for open codes · required if locked" />
+              <button class="peek-btn" data-peek="decodeKeyInput" type="button" title="Show/Hide key">Show</button>
+            </div>
+          </div>
+
+          <div class="action-row">
+            <button id="decryptBtn" class="primary-btn" type="button">
+              ▶ Unlock &amp; Play Experience
+            </button>
+            <span id="decodeError" class="error-text" role="alert"></span>
+          </div>
+        </div>
+
+        <div id="samplesVault" class="samples-vault">
+          <div class="samples-header">
+            <span class="mono-accent">INSTANT EXPERIENCE VAULT</span>
+            <span class="mono-muted">Click any emotion to experience its full ASCII short film</span>
+          </div>
+          <div id="sampleButtons" class="sample-grid"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== THEATER STAGE ==================== -->
+    <section id="theaterView" class="theater-panel hidden" aria-live="polite">
+      <div class="terminal-window">
+        <div class="terminal-chrome">
+          <div class="chrome-dots" aria-hidden="true">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <div class="chrome-title">
+            <span id="theaterEmotionBadge" class="emotion-pill">LOVE</span>
+            <span id="theaterActLabel" class="act-label">ACT I // INITIALIZING</span>
+          </div>
+          <div class="chrome-actions">
+            <span id="theaterTimer" class="mono-muted">00:00 / 00:17</span>
+            <button id="skipAnimBtn" class="mini-btn" type="button">Skip to Message</button>
+            <button id="replayAnimBtn" class="mini-btn" type="button">Replay</button>
+            <button id="closeTheaterBtn" class="mini-btn" type="button">✕ Close</button>
+          </div>
+        </div>
+
+        <div class="terminal-stage">
+          <pre id="asciiScreen" class="ascii-screen" aria-label="ASCII terminal animation"></pre>
+
+          <div id="revealOverlay" class="reveal-overlay hidden">
+            <div class="reveal-card">
+              <div class="reveal-meta">
+                <span id="revealEmotionTag" class="reveal-tag">♥ LOVE</span>
+                <span id="revealModeBadge" class="reveal-burn-badge hidden">🔥 BURNS AFTER READING</span>
+                <span id="revealSenderTag" class="reveal-sender"></span>
+              </div>
+              <p id="revealMessageText" class="reveal-message"></p>
+              <div class="reveal-footer">
+                <button id="burnNowBtn" class="burn-btn hidden" type="button">🔥 Burn &amp; Dissolve</button>
+                <button id="revealReplayBtn" class="secondary-btn" type="button">↻ Replay Story</button>
+                <button id="replyBtn" class="primary-btn" type="button">Send a Secret Reply</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="progress-track">
+          <div id="theaterProgress" class="progress-fill"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script defer src="./dist/app.bundle.js"></script>
+</body>
+</html>

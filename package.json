@@ -1,0 +1,12 @@
+{
+  "name": "tty-feel",
+  "version": "1.0.0",
+  "description": "Encrypted secret messages revealed through emotional ASCII terminal animations.",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-bundle.mjs",
+    "dev": "node scripts/build-bundle.mjs && node server.mjs",
+    "start": "node scripts/build-bundle.mjs && node server.mjs",
+    "test": "node --test test/*.test.mjs"
+  }
+}
