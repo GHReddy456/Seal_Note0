@@ -127,7 +127,6 @@ const el = {
   photoPreviewScreen: document.getElementById('photoPreviewScreen'),
   photoStyleSelect: document.getElementById('photoStyleSelect'),
   photoContrastInput: document.getElementById('photoContrastInput'),
-  photoInvertCheck: document.getElementById('photoInvertCheck'),
   genKeyBtn: document.getElementById('genKeyBtn'),
   encryptBtn: document.getElementById('encryptBtn'),
   encodeError: document.getElementById('encodeError'),
@@ -288,8 +287,7 @@ function updatePhotoAsciiPreview() {
   const [primaryColor, secondaryColor] = getEmotionPalette(state.selectedEmotion);
   state.photoData = convertImageToAscii(state.photoImage, {
     style: el.photoStyleSelect.value,
-    contrast: Number(el.photoContrastInput.value || 1.25),
-    invert: Boolean(el.photoInvertCheck.checked),
+    contrast: Number(el.photoContrastInput.value || 1.55),
     primaryColor,
     secondaryColor,
   });
@@ -863,7 +861,6 @@ function wireEvents() {
   });
   el.photoStyleSelect.addEventListener('change', updatePhotoAsciiPreview);
   el.photoContrastInput.addEventListener('input', updatePhotoAsciiPreview);
-  el.photoInvertCheck.addEventListener('change', updatePhotoAsciiPreview);
 
   el.genKeyBtn.addEventListener('click', generateSecretKey);
   el.encryptBtn.addEventListener('click', handleEncrypt);

@@ -1,6 +1,7 @@
-const RAMP = ' .,:;i1tfLCG08@';
-export const PHOTO_COLS = 58;
-export const PHOTO_ROWS = 20;
+// Pure visual density symbols (no noisy alphanumeric letters) for sharper facial portraits
+const RAMP = ' .,:;+*#%@';
+export const PHOTO_COLS = 74;
+export const PHOTO_ROWS = 21;
 
 const COLOR_TO_CHAR = {
   '': 'w',
@@ -29,26 +30,23 @@ function clampRange(v, min, max) {
 function rgbToTerminalColor(r, g, b, lum, { style = 'emotion', primary = 'rose', secondary = 'gold' } = {}) {
   if (lum < 0.08) return 'dim';
   if (style === 'emotion') {
-    if (lum > 0.82) return 'bright';
-    if (lum > 0.56) return secondary;
-    if (lum > 0.28) return primary;
+    if (lum > 0.8) return 'bright';
+    if (lum > 0.52) return secondary;
+    if (lum > 0.24) return primary;
     return 'muted';
-  }
-  if (style === 'sketch') {
-    return lum > 0.65 ? 'bright' : lum > 0.35 ? primary : 'dim';
   }
 
   // 'color' — map RGB hue to terminal phosphor palette
   const max = Math.max(r, g, b);
   const min = Math.min(r, g, b);
   const sat = max === 0 ? 0 : (max - min) / max;
-  if (sat < 0.18) {
-    return lum > 0.78 ? 'bright' : lum > 0.45 ? 'star' : 'muted';
+  if (sat < 0.16) {
+    return lum > 0.76 ? 'bright' : lum > 0.42 ? 'star' : 'muted';
   }
   if (r >= g && r >= b) {
     if (g > 150 && b < 110) return 'gold';
     if (g > 95 && b < 90) return 'orange';
-    return b > 120 ? 'rose' : 'rose';
+    return 'rose';
   }
   if (g >= r && g >= b) {
     return b > 140 ? 'cyan' : 'green';
@@ -57,18 +55,17 @@ function rgbToTerminalColor(r, g, b, lum, { style = 'emotion', primary = 'rose',
 }
 
 /**
- * Converts an RGBA Uint8ClampedArray / Uint8Array (cols * rows * 4) into compact ASCII rows + color codes.
+ * Converts an RGBA Uint8ClampedArray / Uint8Array (cols * rows * 4) into crisp ASCII rows + color codes.
  */
 export function pixelsToAsciiGrid(rgba, cols = PHOTO_COLS, rows = PHOTO_ROWS, options = {}) {
   const {
-    contrast = 1.25,
-    invert = false,
+    contrast = 1.55,
     style = 'emotion',
     primaryColor = 'rose',
     secondaryColor = 'gold',
   } = options;
 
-  // Compute raw luminance buffer & auto-normalize dynamic range
+  // 1. Compute raw luminance & stretch dynamic range
   const lums = new Float32Array(cols * rows);
   let minLum = 1;
   let maxLum = 0;
@@ -81,35 +78,35 @@ export function pixelsToAsciiGrid(rgba, cols = PHOTO_COLS, rows = PHOTO_ROWS, op
     if (lum > maxLum) maxLum = lum;
   }
 
-  const span = Math.max(0.15, maxLum - minLum);
+  const span = Math.max(0.12, maxLum - minLum);
   const norm = new Float32Array(cols * rows);
   for (let i = 0; i < cols * rows; i++) {
-    let v = (lums[i] - minLum) / span;
-    v = clampRange((v - 0.5) * contrast + 0.5, 0, 1);
-    if (invert) v = 1 - v;
-    norm[i] = v;
+    norm[i] = clampRange((lums[i] - minLum) / span, 0, 1);
   }
 
-  // Optional Sobel edge magnitude for 'sketch' style
+  // 2. Subtle local sharpening + high-range S-curve contrast for crisp facial features
   const asciiRows = [];
   const colorRows = [];
+  const sharpStrength = 0.45;
 
   for (let y = 0; y < rows; y++) {
     let rowChars = '';
     let rowCols = '';
     for (let x = 0; x < cols; x++) {
       const idx = y * cols + x;
-      let val = norm[idx];
+      const cVal = norm[idx];
+      const xm = Math.max(0, x - 1);
+      const xp = Math.min(cols - 1, x + 1);
+      const ym = Math.max(0, y - 1);
+      const yp = Math.min(rows - 1, y + 1);
+      const neighbors =
+        (norm[y * cols + xm] + norm[y * cols + xp] + norm[ym * cols + x] + norm[yp * cols + x]) * 0.25;
+      let val = clampRange(cVal + (cVal - neighbors) * sharpStrength, 0, 1);
 
-      if (style === 'sketch') {
-        const xm = Math.max(0, x - 1);
-        const xp = Math.min(cols - 1, x + 1);
-        const ym = Math.max(0, y - 1);
-        const yp = Math.min(rows - 1, y + 1);
-        const gx = norm[y * cols + xp] - norm[y * cols + xm];
-        const gy = norm[yp * cols + x] - norm[ym * cols + x];
-        val = clampRange(Math.sqrt(gx * gx + gy * gy) * 2.1, 0, 1);
-      }
+      // Apply user-controlled contrast curve (supports up to 3.5x crisp contrast)
+      val = clampRange((val - 0.5) * contrast + 0.5, 0, 1);
+      // Gentle S-curve polish
+      val = val * val * (3 - 2 * val);
 
       const rampIdx = Math.min(RAMP.length - 1, Math.floor(val * (RAMP.length - 0.001)));
       const ch = RAMP[rampIdx];
@@ -142,12 +139,14 @@ export function pixelsToAsciiGrid(rgba, cols = PHOTO_COLS, rows = PHOTO_ROWS, op
 export function convertImageToAscii(img, options = {}) {
   const cols = options.cols || PHOTO_COLS;
   const rows = options.rows || PHOTO_ROWS;
-  const charAspect = 0.52; // monospace char width / height
+  const charAspect = 0.52;
 
   const canvas = document.createElement('canvas');
   canvas.width = cols;
   canvas.height = rows;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
 
   const targetVisualRatio = (cols * charAspect) / rows;
   const srcW = img.naturalWidth || img.width;
@@ -164,7 +163,6 @@ export function convertImageToAscii(img, options = {}) {
     sx = (srcW - sw) * 0.5;
   } else {
     sh = srcW / targetVisualRatio;
-    // Slight upper bias (0.3) so portraits keep eyes/head framed nicely
     sy = (srcH - sh) * 0.28;
   }
 

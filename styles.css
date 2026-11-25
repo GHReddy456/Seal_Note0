@@ -1013,7 +1013,7 @@ input:focus {
 }
 
 .photo-preview-screen {
-  font-size: clamp(5.5px, 0.78vw, 8.2px) !important;
+  font-size: clamp(4.8px, 0.7vw, 7.2px) !important;
   line-height: 1.15 !important;
 }
 
