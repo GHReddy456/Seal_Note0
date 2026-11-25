@@ -795,91 +795,239 @@ function renderGratitude(canvas, frame) {
 }
 
 /* ============================================================================
- * 8. APOLOGY — Fractured heart mending in gold (Kintsugi) as two hands reach
+ * 8. APOLOGY — Bowed walk, close-up tear, kneeling apology & warm embrace
  * ========================================================================== */
 function renderApology(canvas, frame) {
-  drawStars(canvas, frame, 38, 13, 'dim');
+  const dawnT = clamp((frame - 400) / 72, 0, 1);
+  drawStars(canvas, frame, dawnT > 0.5 ? 28 : 42, 13, dawnT > 0.4 ? 'star' : 'dim');
 
-  for (let x = 0; x < canvas.cols; x++) {
-    canvas.set(x, 19, '_', 'muted');
-  }
+  // Soft silver mist & crescent moon in wide shots
+  const isCloseUp = frame >= 108 && frame <= 215;
 
-  // Two figures: start distant, Sender steps forward holding an offering in Act II,
-  // Receiver turns and meets in Act III-IV
-  const approachT = easeInOut((frame - 108) / 100);
-  const meetT = easeInOut((frame - 220) / 92);
-  const leftX = Math.round(lerp(14, 30, approachT) + lerp(0, 6, meetT));
-  const rightX = Math.round(lerp(63, 42, meetT));
+  if (isCloseUp) {
+    // ACT II: Intimate Close-Up of bowed, tearful face & trembling hands holding a flower
+    const breath = Math.floor(frame / 18) % 2 === 0 ? 0 : 1;
+    canvas.sprite(
+      26,
+      2 + breath,
+      [
+        '        .-----------------.        ',
+        "      .'   .-'       '-.   '.      ",
+        '     /    /             \\    \\     ',
+        '    |    |  \\___/ \\___/  |    |    ',
+        '    |    |               |    |    ',
+        '    |     \\     ._.     /     |    ',
+        "     \\     '.  `---'  .'     /     ",
+        "      '.     '-------'     .'      ",
+        "        '-.             .-'        ",
+      ],
+      'cyan'
+    );
 
-  const leftPose = frame < 108 ? 'stand' : approachT < 0.99 ? 'walk' : frame >= 216 ? 'reachRight' : 'wave';
-  const rightPose = frame < 220 ? 'stand' : meetT < 0.99 ? 'walk' : 'reachLeft';
+    // Single glistening teardrop slowly sliding down cheek onto the flower below
+    if (frame >= 122 && frame <= 184) {
+      const tearT = (frame - 122) / 56;
+      const ty = Math.round(lerp(6 + breath, 14, clamp(tearT, 0, 1)));
+      const tearGlyph = tearT < 0.2 ? '*' : tearT < 0.85 ? ':' : '·';
+      canvas.set(35, ty, tearGlyph, 'bright');
+    }
 
-  drawPerson(canvas, leftX, 16, { pose: leftPose, color: 'cyan', legPhase: Math.floor(frame / 7) });
-  drawPerson(canvas, rightX, 16, { pose: rightPose, color: 'rose', legPhase: Math.floor(frame / 7) + 1 });
+    // Two detailed shaded hands gently holding a rose below
+    canvas.sprite(
+      28,
+      14,
+      [
+        '          .❀.          ',
+        '      ___( ✿ )___      ',
+        "=====(    '-'    )=====",
+        '=====(____ | ____)=====',
+        '          \\|/          ',
+      ],
+      frame >= 176 ? 'gold' : 'rose'
+    );
 
-  // Small offering flower held by sender during Act II before the heart mends
-  if (frame >= 115 && frame < 240) {
-    canvas.text(leftX + 3, 17, '-❀', 'gold');
-  }
+    // Shimmer ripple when the tear touches the flower petals
+    if (frame >= 176) {
+      const shimmer = Math.floor(frame / 5) % 2 === 0;
+      canvas.set(36, 15, shimmer ? '✦' : '·', 'bright');
+      canvas.set(42, 15, shimmer ? '✦' : '·', 'bright');
+    }
+  } else {
+    // Wide moonlit path
+    canvas.sprite(66, 1, ['  _.._  ', ' /    \\ ', '|   ((  ', ' \\    / ', '  `--`  '], dawnT > 0.3 ? 'gold' : 'muted');
 
-  // Giant Kintsugi ASCII Heart in the sky: split apart in Act I-II, mends in gold in Act III-IV!
-  const leftHeart = [
-    '  .:::. ',
-    ' :::::::',
-    ' :::::::',
-    " '::::::",
-    "   '::::",
-    "     '::",
-    "       '",
-  ];
-  const rightHeart = [
-    '  .:::.  ',
-    '.::::::: ',
-    ':::::::: ',
-    ":::::::' ",
-    ":::::'   ",
-    ":::'     ",
-    ":'       ",
-  ];
+    for (let x = 0; x < canvas.cols; x++) {
+      canvas.set(x, 19, '_', 'muted');
+      if (x % 11 === 0) canvas.set(x, 21, '~', 'dim');
+    }
 
-  const mendT = easeInOut((frame - 205) / 86);
-  const gap = Math.round(lerp(8, 0, mendT));
-  const heartY = 4;
+    // Gentle healing petals & fireflies drawn in sky BEFORE figures so silhouettes stay crisp
+    if (frame >= 260) {
+      const count = frame >= 380 ? 18 : 8;
+      for (let i = 0; i < count; i++) {
+        const px = 12 + hash01(i * 13 + 5) * 56 + Math.sin(frame * 0.05 + i) * 2.5;
+        const py = ((frame * 0.18 + i * 3.7) % 14) + 2;
+        canvas.set(px, py, i % 3 === 0 ? '✿' : i % 2 === 0 ? '✦' : '·', i % 3 === 0 ? 'gold' : 'rose');
+      }
+    }
 
-  canvas.sprite(31 - Math.floor(gap / 2), heartY, leftHeart, mendT > 0.85 ? 'rose' : 'muted');
-  canvas.sprite(39 + Math.ceil(gap / 2), heartY, rightHeart, mendT > 0.85 ? 'rose' : 'muted');
+    // Tall expressive hurt figure on the right (x=55)
+    const hurtStand = [
+      '  .-.  ',
+      ' (   ) ',
+      ' /| |\\ ',
+      '/ | | \\',
+      '  | |  ',
+      ' _| |_ ',
+    ];
+    const hurtReach = [
+      '  .-.  ',
+      ' (   ) ',
+      ' /| |  ',
+      '/ | |  ',
+      '  | |  ',
+      ' _| |_ ',
+    ];
 
-  // Jagged crack sparks while separated
-  if (gap > 1 && Math.floor(frame / 6) % 2 === 0) {
-    canvas.text(38, heartY + 2, '/', 'dim');
-    canvas.text(39, heartY + 3, '\\', 'dim');
-    canvas.text(38, heartY + 4, '/', 'dim');
-  }
+    if (frame < 108) {
+      // ACT I: Apologizer on the left, head bowed, clutching flower, hesitant step
+      const breathBow = Math.floor(frame / 22) % 2 === 0;
+      const ax = Math.round(lerp(13, 18, easeInOut(frame / 90)));
+      canvas.sprite(
+        ax,
+        13,
+        [
+          breathBow ? '  ._.  ' : '   ._. ',
+          ' /   \\ ',
+          ' \\_ /| ',
+          '   | |--✿',
+          '  / \\  ',
+          ' _| |_ ',
+        ],
+        'cyan'
+      );
+      canvas.sprite(55, 13, hurtStand, 'rose');
+    } else if (frame < 346) {
+      // ACT III: Walks quietly closer, drops onto one knee offering the glowing flower
+      const walkT = easeInOut((frame - 216) / 56);
+      const ax = Math.round(lerp(20, 41, walkT));
+      const kneeling = frame >= 274;
 
-  // Golden kintsugi repair seam glowing once the two halves meet!
-  if (mendT >= 0.88) {
-    const seamGlow = Math.floor(frame / 8) % 2 === 0 ? 'gold' : 'bright';
-    canvas.set(39, heartY + 1, '✦', seamGlow);
-    canvas.set(38, heartY + 2, '/', 'gold');
-    canvas.set(39, heartY + 3, '\\', 'gold');
-    canvas.set(39, heartY + 4, '✦', seamGlow);
-    canvas.set(39, heartY + 5, '|', 'gold');
-  }
+      if (!kneeling) {
+        const step = Math.floor(frame / 6) % 2 === 0;
+        canvas.sprite(
+          ax,
+          13,
+          [
+            '  ._.  ',
+            ' (   ) ',
+            ' /| |\\ ',
+            '  | |--',
+            '  | | ✿',
+            step ? ' /   \\ ' : ' _| |_ ',
+          ],
+          'cyan'
+        );
+      } else {
+        // Humbly down on one knee, both hands offering the glowing flower
+        const dropT = easeInOut((frame - 274) / 28);
+        const ky = Math.round(lerp(13, 14, dropT));
+        canvas.sprite(
+          41,
+          ky,
+          [
+            '  ._.     ',
+            ' (   )    ',
+            '  \\_|\\___ ',
+            '    |   ✿ ',
+            '   /|     ',
+            ' _/ |__   ',
+          ],
+          'cyan'
+        );
+        // Gentle golden glow around the offered flower
+        const glow = Math.floor(frame / 6) % 2 === 0;
+        canvas.set(49, ky + 3, glow ? '✿' : '❀', 'gold');
+        canvas.set(50, ky + 2, glow ? '✦' : '·', 'bright');
+      }
+      canvas.sprite(55, 13, hurtStand, 'rose');
+    } else {
+      // ACT IV: Hurt person turns, steps forward, lifts apologizer up, warm embrace!
+      const stepT = easeInOut((frame - 356) / 38);
+      const liftT = easeInOut((frame - 396) / 34);
+      const embraceT = easeInOut((frame - 430) / 30);
 
-  // Soft healing petals floating down in Act III & IV
-  if (frame >= 225) {
-    for (let i = 0; i < 12; i++) {
-      const px = 22 + hash01(i * 13 + 5) * 36 + Math.sin(frame * 0.06 + i) * 2;
-      const py = ((frame * 0.22 + i * 4) % 14) + 3;
-      canvas.set(px, py, i % 2 === 0 ? '✿' : '·', i % 3 === 0 ? 'gold' : 'cyan');
+      if (frame < 430) {
+        // Hurt person walks up to x=48 and extends hand down to lift apologizer up
+        const rx = Math.round(lerp(55, 48, stepT));
+        const ay = Math.round(lerp(14, 13, liftT));
+        if (liftT < 0.5) {
+          canvas.sprite(
+            41,
+            ay,
+            [
+              '  ._.     ',
+              ' (   )    ',
+              '  \\_|\\___ ',
+              '    |   ✿ ',
+              '   /|     ',
+              ' _/ |__   ',
+            ],
+            'cyan'
+          );
+        } else {
+          canvas.sprite(
+            41,
+            13,
+            [
+              '  .-.  ',
+              ' (   ) ',
+              ' /| |\\ ',
+              '  | |--',
+              '  | |  ',
+              ' _| |_ ',
+            ],
+            'cyan'
+          );
+        }
+        canvas.sprite(rx, 13, stepT > 0.7 ? hurtReach : hurtStand, 'rose');
+        if (stepT > 0.7) {
+          canvas.text(rx - 2, 15, '--✿', 'gold');
+        }
+      } else {
+        // Full tender embrace centered at x=36..45
+        const lx = Math.round(lerp(34, 36, embraceT));
+        const rx = Math.round(lerp(43, 40, embraceT));
+        canvas.sprite(
+          lx,
+          13,
+          [' .-.', '(   ', '/|\\ ', ' | |', ' | |', '_| |'],
+          'cyan'
+        );
+        canvas.sprite(
+          rx,
+          13,
+          [' .-. ', '   ) ', ' /|\\ ', '| |  ', '| |  ', '| |_ '],
+          'rose'
+        );
+
+        // Warm pulsing forgiveness heart above their heads
+        const beat = Math.floor(frame / 10) % 2 === 0;
+        canvas.sprite(
+          36,
+          7,
+          [' .-. .-. ', '(   V   )', " '.   .' ", "   '.'   "],
+          beat ? 'bright' : 'gold'
+        );
+      }
     }
   }
 
   drawCaption(canvas, frame, [
-    { at: 0, text: 'Silence hurts most when you know you caused the crack...', color: 'muted' },
-    { at: 108, text: "I'm not here with excuses — just an honest heart...", color: 'cyan' },
-    { at: 216, text: 'Some cracks heal in gold when both hands reach...', color: 'gold' },
-    { at: 312, text: "❀  I'm truly sorry. Thank you for hearing me  ❀", color: 'bright' },
+    { at: 0, text: 'The hardest walk is toward the person you hurt...', color: 'muted' },
+    { at: 108, text: 'I replayed every word... wishing I could undo the pain.', color: 'cyan' },
+    { at: 216, text: 'No excuses. Just my heart in my hands... please forgive me.', color: 'gold' },
+    { at: 346, text: '❀  Thank you for giving my heart a second chance  ❀', color: 'bright' },
   ]);
 }
 

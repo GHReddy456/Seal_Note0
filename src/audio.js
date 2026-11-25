@@ -103,7 +103,7 @@ export class EmotionAudio {
     if (!ctx) return;
 
     const scale = EMOTION_SCALES[emotion] || EMOTION_SCALES.love;
-    const stepMs = emotion === 'happiness' ? 380 : emotion === 'sadness' ? 920 : 650;
+    const stepMs = emotion === 'happiness' ? 380 : emotion === 'sadness' ? 920 : emotion === 'apology' ? 780 : 650;
     const steps = Math.floor((durationMs - 600) / stepMs);
 
     // Subtle rain or campfire texture for atmospheric immersion
@@ -113,16 +113,26 @@ export class EmotionAudio {
       this.playSoftTexture(durationMs / 1000, { filterFreq: 520, volume: 0.008 });
     }
 
+    const apologyMinor = [220.0, 207.65, 196.0, 174.61, 220.0]; // Tender regret
+    const apologyResolve = [220.0, 277.18, 329.63, 440.0, 554.37]; // Warm forgiveness bloom
+
     for (let i = 0; i < steps; i++) {
       const id = setTimeout(() => {
         if (this.muted) return;
-        const idx =
-          emotion === 'motivation'
-            ? Math.min(scale.length - 1, Math.floor((i / Math.max(1, steps - 1)) * scale.length))
-            : (i * 2 + (i % 3)) % scale.length;
-        const freq = scale[idx] * (i % 6 === 5 && emotion !== 'sadness' ? 1.5 : 1);
+        let freq;
+        if (emotion === 'apology') {
+          const progress = i / Math.max(1, steps - 1);
+          const phrase = progress < 0.68 ? apologyMinor : apologyResolve;
+          freq = phrase[i % phrase.length];
+        } else {
+          const idx =
+            emotion === 'motivation'
+              ? Math.min(scale.length - 1, Math.floor((i / Math.max(1, steps - 1)) * scale.length))
+              : (i * 2 + (i % 3)) % scale.length;
+          freq = scale[idx] * (i % 6 === 5 && emotion !== 'sadness' ? 1.5 : 1);
+        }
         const type = emotion === 'happiness' ? 'triangle' : 'sine';
-        const dur = emotion === 'sadness' || emotion === 'missing' ? 2.2 : 1.5;
+        const dur = emotion === 'sadness' || emotion === 'missing' || emotion === 'apology' ? 2.3 : 1.5;
         this.playNote(freq, { duration: dur, volume: 0.034, type });
       }, i * stepMs);
       this.timerIds.push(id);
