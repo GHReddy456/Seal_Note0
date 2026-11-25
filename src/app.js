@@ -292,15 +292,15 @@ function updatePhotoAsciiPreview() {
     secondaryColor,
   });
 
-  photoPreviewCanvas.clear();
+  const gridCanvas = new AsciiCanvas(state.photoData.w, state.photoData.h);
   for (let y = 0; y < state.photoData.h; y++) {
     const chars = state.photoData.r[y];
     const cols = state.photoData.c[y];
     for (let x = 0; x < state.photoData.w; x++) {
-      photoPreviewCanvas.set(x, y, chars[x] || ' ', CHAR_TO_COLOR[cols[x]] || 'white');
+      gridCanvas.set(x, y, chars[x] || ' ', CHAR_TO_COLOR[cols[x]] || 'white');
     }
   }
-  el.photoPreviewScreen.innerHTML = photoPreviewCanvas.toHTML();
+  el.photoPreviewScreen.innerHTML = gridCanvas.toHTML();
 }
 
 function clearAttachedPhoto() {

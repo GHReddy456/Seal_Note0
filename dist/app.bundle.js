@@ -290,13 +290,26 @@ function pixelsToAsciiGrid(rgba, cols = PHOTO_COLS, rows = PHOTO_ROWS, options =
 }
 
 /**
- * Browser helper: draws an Image/HTMLImageElement with cover-crop onto an offscreen canvas
- * (compensating for monospace character aspect ratio) and converts to ASCII portrait data.
+ * Browser helper: scales the COMPLETE image (zero cropping, preserving aspect ratio
+ * adjusted for monospace characters) onto an offscreen canvas and converts to ASCII.
  */
 function convertImageToAscii(img, options = {}) {
-  const cols = options.cols || PHOTO_COLS;
-  const rows = options.rows || PHOTO_ROWS;
+  const maxCols = options.cols || PHOTO_COLS;
+  const maxRows = options.rows || PHOTO_ROWS;
   const charAspect = 0.52;
+
+  const srcW = img.naturalWidth || img.width;
+  const srcH = img.naturalHeight || img.height;
+  const srcRatio = srcW / Math.max(1, srcH);
+
+  let rows = maxRows;
+  let cols = Math.round((rows * srcRatio) / charAspect);
+  if (cols > maxCols) {
+    cols = maxCols;
+    rows = Math.round((cols * charAspect) / srcRatio);
+  }
+  cols = clampRange(cols, 8, maxCols);
+  rows = clampRange(rows, 4, maxRows);
 
   const canvas = document.createElement('canvas');
   canvas.width = cols;
@@ -305,25 +318,7 @@ function convertImageToAscii(img, options = {}) {
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
 
-  const targetVisualRatio = (cols * charAspect) / rows;
-  const srcW = img.naturalWidth || img.width;
-  const srcH = img.naturalHeight || img.height;
-  const srcRatio = srcW / srcH;
-
-  let sx = 0;
-  let sy = 0;
-  let sw = srcW;
-  let sh = srcH;
-
-  if (srcRatio > targetVisualRatio) {
-    sw = srcH * targetVisualRatio;
-    sx = (srcW - sw) * 0.5;
-  } else {
-    sh = srcW / targetVisualRatio;
-    sy = (srcH - sh) * 0.28;
-  }
-
-  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, cols, rows);
+  ctx.drawImage(img, 0, 0, srcW, srcH, 0, 0, cols, rows);
   const imgData = ctx.getImageData(0, 0, cols, rows).data;
   return pixelsToAsciiGrid(imgData, cols, rows, options);
 }
@@ -2577,15 +2572,15 @@ function updatePhotoAsciiPreview() {
     secondaryColor,
   });
 
-  photoPreviewCanvas.clear();
+  const gridCanvas = new AsciiCanvas(state.photoData.w, state.photoData.h);
   for (let y = 0; y < state.photoData.h; y++) {
     const chars = state.photoData.r[y];
     const cols = state.photoData.c[y];
     for (let x = 0; x < state.photoData.w; x++) {
-      photoPreviewCanvas.set(x, y, chars[x] || ' ', CHAR_TO_COLOR[cols[x]] || 'white');
+      gridCanvas.set(x, y, chars[x] || ' ', CHAR_TO_COLOR[cols[x]] || 'white');
     }
   }
-  el.photoPreviewScreen.innerHTML = photoPreviewCanvas.toHTML();
+  el.photoPreviewScreen.innerHTML = gridCanvas.toHTML();
 }
 
 function clearAttachedPhoto() {
