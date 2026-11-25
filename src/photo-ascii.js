@@ -133,26 +133,45 @@ export function pixelsToAsciiGrid(rgba, cols = PHOTO_COLS, rows = PHOTO_ROWS, op
 }
 
 /**
- * Browser helper: scales the COMPLETE image (zero cropping, preserving aspect ratio
- * adjusted for monospace characters) onto an offscreen canvas and converts to ASCII.
+ * Browser helper: draws an Image/HTMLImageElement onto an offscreen canvas.
+ * Defaults to cover-crop (74x21) for big detailed portraits; when `fullImage` is true,
+ * scales the complete uncropped image preserving aspect ratio.
  */
 export function convertImageToAscii(img, options = {}) {
   const maxCols = options.cols || PHOTO_COLS;
   const maxRows = options.rows || PHOTO_ROWS;
+  const fullImage = Boolean(options.fullImage);
   const charAspect = 0.52;
 
   const srcW = img.naturalWidth || img.width;
   const srcH = img.naturalHeight || img.height;
   const srcRatio = srcW / Math.max(1, srcH);
 
+  let cols = maxCols;
   let rows = maxRows;
-  let cols = Math.round((rows * srcRatio) / charAspect);
-  if (cols > maxCols) {
-    cols = maxCols;
-    rows = Math.round((cols * charAspect) / srcRatio);
+  let sx = 0;
+  let sy = 0;
+  let sw = srcW;
+  let sh = srcH;
+
+  if (fullImage) {
+    cols = Math.round((rows * srcRatio) / charAspect);
+    if (cols > maxCols) {
+      cols = maxCols;
+      rows = Math.round((cols * charAspect) / srcRatio);
+    }
+    cols = clampRange(cols, 8, maxCols);
+    rows = clampRange(rows, 4, maxRows);
+  } else {
+    const targetVisualRatio = (cols * charAspect) / rows;
+    if (srcRatio > targetVisualRatio) {
+      sw = srcH * targetVisualRatio;
+      sx = (srcW - sw) * 0.5;
+    } else {
+      sh = srcW / targetVisualRatio;
+      sy = (srcH - sh) * 0.28;
+    }
   }
-  cols = clampRange(cols, 8, maxCols);
-  rows = clampRange(rows, 4, maxRows);
 
   const canvas = document.createElement('canvas');
   canvas.width = cols;
@@ -161,7 +180,7 @@ export function convertImageToAscii(img, options = {}) {
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
 
-  ctx.drawImage(img, 0, 0, srcW, srcH, 0, 0, cols, rows);
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, cols, rows);
   const imgData = ctx.getImageData(0, 0, cols, rows).data;
   return pixelsToAsciiGrid(imgData, cols, rows, options);
 }

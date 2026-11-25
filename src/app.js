@@ -127,6 +127,7 @@ const el = {
   photoPreviewScreen: document.getElementById('photoPreviewScreen'),
   photoStyleSelect: document.getElementById('photoStyleSelect'),
   photoContrastInput: document.getElementById('photoContrastInput'),
+  photoFullCheck: document.getElementById('photoFullCheck'),
   genKeyBtn: document.getElementById('genKeyBtn'),
   encryptBtn: document.getElementById('encryptBtn'),
   encodeError: document.getElementById('encodeError'),
@@ -288,6 +289,7 @@ function updatePhotoAsciiPreview() {
   state.photoData = convertImageToAscii(state.photoImage, {
     style: el.photoStyleSelect.value,
     contrast: Number(el.photoContrastInput.value || 1.55),
+    fullImage: Boolean(el.photoFullCheck.checked),
     primaryColor,
     secondaryColor,
   });
@@ -861,6 +863,7 @@ function wireEvents() {
   });
   el.photoStyleSelect.addEventListener('change', updatePhotoAsciiPreview);
   el.photoContrastInput.addEventListener('input', updatePhotoAsciiPreview);
+  el.photoFullCheck.addEventListener('change', updatePhotoAsciiPreview);
 
   el.genKeyBtn.addEventListener('click', generateSecretKey);
   el.encryptBtn.addEventListener('click', handleEncrypt);
