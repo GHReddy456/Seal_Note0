@@ -22,7 +22,7 @@ export const CHAR_TO_COLOR = Object.fromEntries(
   Object.entries(COLOR_TO_CHAR).map(([k, v]) => [v, k])
 );
 
-function clamp(v, min, max) {
+function clampRange(v, min, max) {
   return Math.max(min, Math.min(max, v));
 }
 
@@ -85,7 +85,7 @@ export function pixelsToAsciiGrid(rgba, cols = PHOTO_COLS, rows = PHOTO_ROWS, op
   const norm = new Float32Array(cols * rows);
   for (let i = 0; i < cols * rows; i++) {
     let v = (lums[i] - minLum) / span;
-    v = clamp((v - 0.5) * contrast + 0.5, 0, 1);
+    v = clampRange((v - 0.5) * contrast + 0.5, 0, 1);
     if (invert) v = 1 - v;
     norm[i] = v;
   }
@@ -108,7 +108,7 @@ export function pixelsToAsciiGrid(rgba, cols = PHOTO_COLS, rows = PHOTO_ROWS, op
         const yp = Math.min(rows - 1, y + 1);
         const gx = norm[y * cols + xp] - norm[y * cols + xm];
         const gy = norm[yp * cols + x] - norm[ym * cols + x];
-        val = clamp(Math.sqrt(gx * gx + gy * gy) * 2.1, 0, 1);
+        val = clampRange(Math.sqrt(gx * gx + gy * gy) * 2.1, 0, 1);
       }
 
       const rampIdx = Math.min(RAMP.length - 1, Math.floor(val * (RAMP.length - 0.001)));

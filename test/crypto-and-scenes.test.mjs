@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
 
 import { encryptMessage, decryptMessage, inspectCode } from '../src/crypto.js';
 import { EMOTION_LIST } from '../src/emotions.js';
@@ -143,4 +145,86 @@ test('converts pixels to ASCII portrait, round-trips in cipher, and renders reve
   const out = canvas.toLines().join('\n');
   assert.ok(out.includes('MEMORY DECODED'));
   assert.ok(out.includes('ALEX'));
+});
+
+test('built app.bundle.js boots cleanly and binds encrypt + photo controls', async () => {
+  const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const bundle = fs.readFileSync(new URL('../dist/app.bundle.js', import.meta.url), 'utf8');
+  const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((m) => m[1]);
+  const elMap = new Map();
+
+  const makeEl = (tag) => {
+    const listeners = {};
+    return {
+      tagName: tag,
+      listeners,
+      children: [],
+      style: { setProperty() {} },
+      classList: {
+        _s: new Set(['hidden']),
+        toggle(c, f) {
+          if (f === undefined) {
+            if (this._s.has(c)) { this._s.delete(c); return false; }
+            this._s.add(c);
+            return true;
+          }
+          f ? this._s.add(c) : this._s.delete(c);
+        },
+        add(...c) { c.forEach((x) => this._s.add(x)); },
+        remove(...c) { c.forEach((x) => this._s.delete(x)); },
+        contains(c) { return this._s.has(c); },
+      },
+      setAttribute() {},
+      addEventListener(ev, fn) { (listeners[ev] ||= []).push(fn); },
+      append(...nodes) { this.children.push(...nodes); },
+      appendChild(node) { this.children.push(node); },
+      querySelectorAll() { return []; },
+      focus() {},
+      value: '',
+      textContent: '',
+      innerHTML: '',
+      dataset: {},
+      checked: false,
+      type: 'text',
+    };
+  };
+
+  for (const id of ids) elMap.set(id, makeEl('div'));
+
+  const sandbox = {
+    window: { location: { hash: '', href: 'https://messagefun.vercel.app/' }, addEventListener() {} },
+    document: {
+      documentElement: makeEl('html'),
+      body: makeEl('body'),
+      getElementById: (id) => elMap.get(id) || null,
+      createElement: (tag) => makeEl(tag),
+      querySelectorAll: () => [],
+      querySelector: () => null,
+    },
+    requestAnimationFrame: () => 1,
+    cancelAnimationFrame: () => {},
+    localStorage: { getItem: () => null, setItem: () => {} },
+    crypto: globalThis.crypto,
+    TextEncoder,
+    TextDecoder,
+    Blob,
+    Response,
+    CompressionStream,
+    DecompressionStream,
+    btoa,
+    atob,
+    URL,
+    setTimeout,
+    clearTimeout,
+  };
+
+  vm.runInNewContext(bundle, sandbox);
+
+  assert.equal(elMap.get('emotionGrid').children.length, 8);
+  assert.ok(elMap.get('encryptBtn').listeners.click?.length > 0, 'encryptBtn click listener must bind');
+  assert.ok(elMap.get('choosePhotoBtn').listeners.click?.length > 0, 'choosePhotoBtn click listener must bind');
+
+  elMap.get('messageInput').value = 'Hello from boot test!';
+  await elMap.get('encryptBtn').listeners.click[0]();
+  assert.ok(elMap.get('encodedToken').textContent.startsWith('TTY0.'), 'Encrypt button should produce TTY0 token');
 });

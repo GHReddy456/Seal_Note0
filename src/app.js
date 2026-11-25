@@ -257,6 +257,18 @@ function renderEmotionCards() {
     tag.className = 'emotion-tagline';
     tag.textContent = emo.tagline;
 
+    btn.append(head, art, tag);
+    btn.addEventListener('click', () => {
+      state.selectedEmotion = emo.id;
+      applyEmotionTheme(emo.id);
+      renderEmotionCards();
+      startMiniPreview();
+      if (state.photoImage) updatePhotoAsciiPreview();
+    });
+    el.emotionGrid.appendChild(btn);
+  }
+}
+
 function getEmotionPalette(emotionId) {
   const map = {
     love: ['rose', 'gold'],
@@ -300,18 +312,6 @@ function clearAttachedPhoto() {
   el.photoEditorBox.classList.add('hidden');
   el.removePhotoBtn.classList.add('hidden');
   el.choosePhotoBtn.textContent = '+ Choose Photo';
-}
-
-    btn.append(head, art, tag);
-    btn.addEventListener('click', () => {
-      state.selectedEmotion = emo.id;
-      applyEmotionTheme(emo.id);
-      renderEmotionCards();
-      startMiniPreview();
-      if (state.photoImage) updatePhotoAsciiPreview();
-    });
-    el.emotionGrid.appendChild(btn);
-  }
 }
 
 function renderSampleButtons() {
