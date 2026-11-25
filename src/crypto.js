@@ -207,6 +207,7 @@ export async function encryptMessage({
   sender = '',
   unlockAt = null,
   burn = false,
+  photo = null,
 }) {
   const cleanMessage = typeof message === 'string' ? message.trim() : '';
   const cleanKey = typeof key === 'string' ? key : '';
@@ -222,6 +223,9 @@ export async function encryptMessage({
   if (burn) {
     opts.b = 1;
     opts.id = generateMsgId();
+  }
+  if (photo && Array.isArray(photo.r) && Array.isArray(photo.c)) {
+    opts.p = { w: photo.w, h: photo.h, r: photo.r, c: photo.c };
   }
 
   const hasOpts = Object.keys(opts).length > 0;
@@ -406,5 +410,6 @@ export async function decryptMessage({ code, key = '' }) {
     unlockAt: typeof opts?.u === 'number' ? opts.u : null,
     burn: Boolean(opts?.b),
     id: typeof opts?.id === 'string' ? opts.id : null,
+    photo: opts?.p && Array.isArray(opts.p.r) ? opts.p : null,
   };
 }

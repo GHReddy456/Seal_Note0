@@ -141,6 +141,41 @@
             </div>
           </div>
 
+          <div class="photo-attach-box">
+            <div class="label-row">
+              <label>📷 Attach Photo Memory <span class="optional-tag">(Optional · turns into ASCII)</span></label>
+              <div class="photo-btn-group">
+                <input id="photoFileInput" type="file" accept="image/*" class="hidden" />
+                <button id="choosePhotoBtn" class="mini-action-btn" type="button">+ Choose Photo</button>
+                <button id="removePhotoBtn" class="link-btn hidden" type="button">Remove</button>
+              </div>
+            </div>
+
+            <div id="photoEditorBox" class="photo-editor-box hidden">
+              <div class="photo-preview-wrap">
+                <pre id="photoPreviewScreen" class="ascii-screen photo-preview-screen" aria-label="ASCII photo preview"></pre>
+              </div>
+              <div class="photo-controls">
+                <label class="photo-ctrl">
+                  <span>Style</span>
+                  <select id="photoStyleSelect">
+                    <option value="emotion">Emotion Glow</option>
+                    <option value="color">Color Phosphor</option>
+                    <option value="sketch">Edge Sketch</option>
+                  </select>
+                </label>
+                <label class="photo-ctrl">
+                  <span>Contrast</span>
+                  <input id="photoContrastInput" type="range" min="0.8" max="2.1" step="0.05" value="1.25" />
+                </label>
+                <label class="photo-ctrl-check">
+                  <input id="photoInvertCheck" type="checkbox" />
+                  <span>Invert</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
           <div class="action-row">
             <button id="encryptBtn" class="primary-btn" type="button">
               ✦ Create Secret Code
@@ -252,7 +287,7 @@
           </div>
         </div>
 
-        <div class="terminal-stage">
+        <div id="terminalStage" class="terminal-stage">
           <pre id="asciiScreen" class="ascii-screen" aria-label="ASCII terminal animation"></pre>
 
           <div id="revealOverlay" class="reveal-overlay hidden">

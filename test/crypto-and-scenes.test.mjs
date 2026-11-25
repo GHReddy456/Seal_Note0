@@ -4,7 +4,8 @@ import assert from 'node:assert/strict';
 import { encryptMessage, decryptMessage, inspectCode } from '../src/crypto.js';
 import { EMOTION_LIST } from '../src/emotions.js';
 import { AsciiCanvas } from '../src/ascii-canvas.js';
-import { renderSceneFrame, renderTimeCapsule, renderBurnAsh, CANVAS_COLS, CANVAS_ROWS } from '../src/scenes.js';
+import { pixelsToAsciiGrid, PHOTO_COLS, PHOTO_ROWS } from '../src/photo-ascii.js';
+import { renderSceneFrame, renderTimeCapsule, renderBurnAsh, renderPhotoReveal, CANVAS_COLS, CANVAS_ROWS } from '../src/scenes.js';
 
 test('encodes and decodes open message without a secret key (TTY0)', async () => {
   const message = 'Just wanted to remind you how glad I am that you are in my life.';
@@ -111,4 +112,35 @@ test('supports Time Capsule unlockAt and Burn After Reading metadata + scenes', 
 
   renderBurnAsh(canvas, 95, 'Happy midnight birthday!', { alreadyBurned: false });
   assert.ok(canvas.toLines().join('\n').includes('TURNED TO ASH'));
+});
+
+test('converts pixels to ASCII portrait, round-trips in cipher, and renders reveal', async () => {
+  const rgba = new Uint8ClampedArray(PHOTO_COLS * PHOTO_ROWS * 4);
+  for (let y = 0; y < PHOTO_ROWS; y++) {
+    for (let x = 0; x < PHOTO_COLS; x++) {
+      const i = (y * PHOTO_COLS + x) * 4;
+      rgba[i] = (x * 4) % 255;
+      rgba[i + 1] = (y * 12) % 255;
+      rgba[i + 2] = 180;
+      rgba[i + 3] = 255;
+    }
+  }
+  const photo = pixelsToAsciiGrid(rgba, PHOTO_COLS, PHOTO_ROWS, { style: 'emotion' });
+  assert.equal(photo.r.length, PHOTO_ROWS);
+  assert.equal(photo.r[0].length, PHOTO_COLS);
+
+  const code = await encryptMessage({
+    message: 'Thinking of this memory!',
+    emotion: 'love',
+    photo,
+    sender: 'Alex',
+  });
+  const decoded = await decryptMessage({ code });
+  assert.deepEqual(decoded.photo, photo);
+
+  const canvas = new AsciiCanvas(CANVAS_COLS, CANVAS_ROWS);
+  renderPhotoReveal(canvas, 120, decoded.photo, { sender: decoded.sender });
+  const out = canvas.toLines().join('\n');
+  assert.ok(out.includes('MEMORY DECODED'));
+  assert.ok(out.includes('ALEX'));
 });

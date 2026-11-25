@@ -969,6 +969,100 @@ input:focus {
   overflow-x: auto;
 }
 
+.terminal-stage.with-photo {
+  flex-direction: column;
+  gap: 18px;
+}
+
+.terminal-stage.with-photo .reveal-overlay {
+  position: static;
+  padding: 0;
+  width: 100%;
+}
+
+.photo-attach-box {
+  background: rgba(11, 16, 27, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.photo-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.photo-editor-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.photo-preview-wrap {
+  display: flex;
+  justify-content: center;
+  background: #04060b;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 10px;
+  padding: 8px;
+  overflow: hidden;
+}
+
+.photo-preview-screen {
+  font-size: clamp(5.5px, 0.78vw, 8.2px) !important;
+  line-height: 1.15 !important;
+}
+
+.photo-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+
+.photo-ctrl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.photo-ctrl select {
+  background: #06080f;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--text);
+  border-radius: 7px;
+  padding: 4px 8px;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+}
+
+.photo-ctrl input[type='range'] {
+  width: 96px;
+  padding: 0;
+  accent-color: var(--accent);
+}
+
+.photo-ctrl-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.photo-ctrl-check input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
+}
+
 .ascii-screen {
   margin: 0;
   font-family: var(--font-mono);

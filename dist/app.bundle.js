@@ -155,6 +155,182 @@ const EMOTIONS = {
 const EMOTION_LIST = Object.values(EMOTIONS);
 
 
+// ===== src/photo-ascii.js =====
+const RAMP = ' .,:;i1tfLCG08@';
+const PHOTO_COLS = 58;
+const PHOTO_ROWS = 20;
+
+const COLOR_TO_CHAR = {
+  '': 'w',
+  dim: 'd',
+  muted: 'm',
+  star: 's',
+  white: 'w',
+  bright: 'b',
+  rose: 'r',
+  gold: 'g',
+  cyan: 'c',
+  blue: 'l',
+  violet: 'v',
+  orange: 'o',
+  green: 'n',
+};
+const CHAR_TO_COLOR = Object.fromEntries(
+  Object.entries(COLOR_TO_CHAR).map(([k, v]) => [v, k])
+);
+
+function clamp(v, min, max) {
+  return Math.max(min, Math.min(max, v));
+}
+
+function rgbToTerminalColor(r, g, b, lum, { style = 'emotion', primary = 'rose', secondary = 'gold' } = {}) {
+  if (lum < 0.08) return 'dim';
+  if (style === 'emotion') {
+    if (lum > 0.82) return 'bright';
+    if (lum > 0.56) return secondary;
+    if (lum > 0.28) return primary;
+    return 'muted';
+  }
+  if (style === 'sketch') {
+    return lum > 0.65 ? 'bright' : lum > 0.35 ? primary : 'dim';
+  }
+
+  // 'color' — map RGB hue to terminal phosphor palette
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const sat = max === 0 ? 0 : (max - min) / max;
+  if (sat < 0.18) {
+    return lum > 0.78 ? 'bright' : lum > 0.45 ? 'star' : 'muted';
+  }
+  if (r >= g && r >= b) {
+    if (g > 150 && b < 110) return 'gold';
+    if (g > 95 && b < 90) return 'orange';
+    return b > 120 ? 'rose' : 'rose';
+  }
+  if (g >= r && g >= b) {
+    return b > 140 ? 'cyan' : 'green';
+  }
+  return r > 135 ? 'violet' : lum > 0.55 ? 'cyan' : 'blue';
+}
+
+/**
+ * Converts an RGBA Uint8ClampedArray / Uint8Array (cols * rows * 4) into compact ASCII rows + color codes.
+ */
+function pixelsToAsciiGrid(rgba, cols = PHOTO_COLS, rows = PHOTO_ROWS, options = {}) {
+  const {
+    contrast = 1.25,
+    invert = false,
+    style = 'emotion',
+    primaryColor = 'rose',
+    secondaryColor = 'gold',
+  } = options;
+
+  // Compute raw luminance buffer & auto-normalize dynamic range
+  const lums = new Float32Array(cols * rows);
+  let minLum = 1;
+  let maxLum = 0;
+
+  for (let i = 0; i < cols * rows; i++) {
+    const o = i * 4;
+    const lum = (0.299 * rgba[o] + 0.587 * rgba[o + 1] + 0.114 * rgba[o + 2]) / 255;
+    lums[i] = lum;
+    if (lum < minLum) minLum = lum;
+    if (lum > maxLum) maxLum = lum;
+  }
+
+  const span = Math.max(0.15, maxLum - minLum);
+  const norm = new Float32Array(cols * rows);
+  for (let i = 0; i < cols * rows; i++) {
+    let v = (lums[i] - minLum) / span;
+    v = clamp((v - 0.5) * contrast + 0.5, 0, 1);
+    if (invert) v = 1 - v;
+    norm[i] = v;
+  }
+
+  // Optional Sobel edge magnitude for 'sketch' style
+  const asciiRows = [];
+  const colorRows = [];
+
+  for (let y = 0; y < rows; y++) {
+    let rowChars = '';
+    let rowCols = '';
+    for (let x = 0; x < cols; x++) {
+      const idx = y * cols + x;
+      let val = norm[idx];
+
+      if (style === 'sketch') {
+        const xm = Math.max(0, x - 1);
+        const xp = Math.min(cols - 1, x + 1);
+        const ym = Math.max(0, y - 1);
+        const yp = Math.min(rows - 1, y + 1);
+        const gx = norm[y * cols + xp] - norm[y * cols + xm];
+        const gy = norm[yp * cols + x] - norm[ym * cols + x];
+        val = clamp(Math.sqrt(gx * gx + gy * gy) * 2.1, 0, 1);
+      }
+
+      const rampIdx = Math.min(RAMP.length - 1, Math.floor(val * (RAMP.length - 0.001)));
+      const ch = RAMP[rampIdx];
+      const o = idx * 4;
+      const termCol = rgbToTerminalColor(rgba[o], rgba[o + 1], rgba[o + 2], val, {
+        style,
+        primary: primaryColor,
+        secondary: secondaryColor,
+      });
+
+      rowChars += ch;
+      rowCols += COLOR_TO_CHAR[termCol] || 'w';
+    }
+    asciiRows.push(rowChars);
+    colorRows.push(rowCols);
+  }
+
+  return {
+    w: cols,
+    h: rows,
+    r: asciiRows,
+    c: colorRows,
+  };
+}
+
+/**
+ * Browser helper: draws an Image/HTMLImageElement with cover-crop onto an offscreen canvas
+ * (compensating for monospace character aspect ratio) and converts to ASCII portrait data.
+ */
+function convertImageToAscii(img, options = {}) {
+  const cols = options.cols || PHOTO_COLS;
+  const rows = options.rows || PHOTO_ROWS;
+  const charAspect = 0.52; // monospace char width / height
+
+  const canvas = document.createElement('canvas');
+  canvas.width = cols;
+  canvas.height = rows;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+  const targetVisualRatio = (cols * charAspect) / rows;
+  const srcW = img.naturalWidth || img.width;
+  const srcH = img.naturalHeight || img.height;
+  const srcRatio = srcW / srcH;
+
+  let sx = 0;
+  let sy = 0;
+  let sw = srcW;
+  let sh = srcH;
+
+  if (srcRatio > targetVisualRatio) {
+    sw = srcH * targetVisualRatio;
+    sx = (srcW - sw) * 0.5;
+  } else {
+    sh = srcW / targetVisualRatio;
+    // Slight upper bias (0.3) so portraits keep eyes/head framed nicely
+    sy = (srcH - sh) * 0.28;
+  }
+
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, cols, rows);
+  const imgData = ctx.getImageData(0, 0, cols, rows).data;
+  return pixelsToAsciiGrid(imgData, cols, rows, options);
+}
+
+
 // ===== src/crypto.js =====
 
 const PREFIX_OPEN = 'TTY0.';
@@ -364,6 +540,7 @@ async function encryptMessage({
   sender = '',
   unlockAt = null,
   burn = false,
+  photo = null,
 }) {
   const cleanMessage = typeof message === 'string' ? message.trim() : '';
   const cleanKey = typeof key === 'string' ? key : '';
@@ -379,6 +556,9 @@ async function encryptMessage({
   if (burn) {
     opts.b = 1;
     opts.id = generateMsgId();
+  }
+  if (photo && Array.isArray(photo.r) && Array.isArray(photo.c)) {
+    opts.p = { w: photo.w, h: photo.h, r: photo.r, c: photo.c };
   }
 
   const hasOpts = Object.keys(opts).length > 0;
@@ -563,6 +743,7 @@ async function decryptMessage({ code, key = '' }) {
     unlockAt: typeof opts?.u === 'number' ? opts.u : null,
     burn: Boolean(opts?.b),
     id: typeof opts?.id === 'string' ? opts.id : null,
+    photo: opts?.p && Array.isArray(opts.p.r) ? opts.p : null,
   };
 }
 
@@ -1888,6 +2069,57 @@ function renderBurnAsh(canvas, frame, message, { alreadyBurned = false } = {}) {
   return canvas;
 }
 
+/**
+ * Renders the Stardust Assembly + crisp display of an attached ASCII portrait photo.
+ */
+function renderPhotoReveal(canvas, frame, photo, { sender = '' } = {}) {
+  canvas.clear();
+  drawStars(canvas, frame, 36, 22, 'dim');
+
+  const w = photo.w || (photo.r[0] ? photo.r[0].length : 58);
+  const h = photo.h || photo.r.length;
+  const ox = Math.max(1, Math.floor((canvas.cols - w) / 2));
+  const oy = Math.max(1, Math.floor((22 - h) / 2));
+
+  // Subtle corner brackets around portrait
+  canvas.text(ox - 1, oy - 1, '+' + '-'.repeat(w) + '+', 'muted');
+  for (let r = 0; r < h; r++) {
+    canvas.set(ox - 1, oy + r, '|', 'dim');
+    canvas.set(ox + w, oy + r, '|', 'dim');
+  }
+  canvas.text(ox - 1, oy + h, '+' + '-'.repeat(w) + '+', 'muted');
+
+  const progress = clamp(frame / 96, 0, 1.25);
+  const scanGlyphs = '*+#✦:·';
+
+  for (let y = 0; y < h; y++) {
+    const rowChars = photo.r[y] || '';
+    const rowCols = photo.c[y] || '';
+    for (let x = 0; x < w; x++) {
+      const ch = rowChars[x] || ' ';
+      const colCode = rowCols[x] || 'w';
+      const color = CHAR_TO_COLOR[colCode] || 'white';
+      const threshold = (y / Math.max(1, h)) * 0.72 + hash01(y * 73 + x * 19 + 3) * 0.28;
+      const delta = progress - threshold;
+
+      if (delta < 0) {
+        if (hash01(x * 13 + y * 31 + Math.floor(frame / 4)) > 0.92) {
+          canvas.set(ox + x, oy + y, '·', 'dim');
+        }
+      } else if (delta < 0.08 && ch !== ' ') {
+        const g = scanGlyphs[(x + y + frame) % scanGlyphs.length];
+        canvas.set(ox + x, oy + y, g, 'bright');
+      } else {
+        canvas.set(ox + x, oy + y, ch, color);
+      }
+    }
+  }
+
+  const label = sender ? `// MEMORY DECODED · FROM ${sender.toUpperCase()}` : '// MEMORY DECODED IN ASCII';
+  canvas.text(Math.max(1, Math.floor((canvas.cols - label.length) / 2)), 23, label, 'bright');
+  return canvas;
+}
+
 
 // ===== src/audio.js =====
 /**
@@ -2059,6 +2291,7 @@ class EmotionAudio {
 
 
 
+
 const FPS = 24;
 const FRAME_MS = 1000 / FPS;
 
@@ -2116,6 +2349,8 @@ const state = {
   livingBgRafId: null,
   revealTimerId: null,
   presetUnlockOffsetMs: null,
+  photoImage: null,
+  photoData: null,
   currentExperience: null,
 };
 
@@ -2144,6 +2379,7 @@ function markMessageBurned(id) {
 const audio = new EmotionAudio();
 const theaterCanvas = new AsciiCanvas(CANVAS_COLS, CANVAS_ROWS);
 const previewCanvas = new AsciiCanvas(CANVAS_COLS, CANVAS_ROWS);
+const photoPreviewCanvas = new AsciiCanvas(PHOTO_COLS, PHOTO_ROWS);
 
 const el = {
   brandSubtitle: document.getElementById('brandSubtitle'),
@@ -2171,6 +2407,14 @@ const el = {
   unlockAtInput: document.getElementById('unlockAtInput'),
   unlockPresetNote: document.getElementById('unlockPresetNote'),
   burnToggle: document.getElementById('burnToggle'),
+  photoFileInput: document.getElementById('photoFileInput'),
+  choosePhotoBtn: document.getElementById('choosePhotoBtn'),
+  removePhotoBtn: document.getElementById('removePhotoBtn'),
+  photoEditorBox: document.getElementById('photoEditorBox'),
+  photoPreviewScreen: document.getElementById('photoPreviewScreen'),
+  photoStyleSelect: document.getElementById('photoStyleSelect'),
+  photoContrastInput: document.getElementById('photoContrastInput'),
+  photoInvertCheck: document.getElementById('photoInvertCheck'),
   genKeyBtn: document.getElementById('genKeyBtn'),
   encryptBtn: document.getElementById('encryptBtn'),
   encodeError: document.getElementById('encodeError'),
@@ -2191,6 +2435,7 @@ const el = {
   toggleSound: document.getElementById('toggleSound'),
   soundLabel: document.getElementById('soundLabel'),
   toggleCrt: document.getElementById('toggleCrt'),
+  terminalStage: document.getElementById('terminalStage'),
   asciiScreen: document.getElementById('asciiScreen'),
   theaterEmotionBadge: document.getElementById('theaterEmotionBadge'),
   theaterActLabel: document.getElementById('theaterActLabel'),
@@ -2299,12 +2544,58 @@ function renderEmotionCards() {
     tag.className = 'emotion-tagline';
     tag.textContent = emo.tagline;
 
+function getEmotionPalette(emotionId) {
+  const map = {
+    love: ['rose', 'gold'],
+    happiness: ['gold', 'cyan'],
+    sadness: ['blue', 'gold'],
+    missing: ['violet', 'rose'],
+    friendship: ['orange', 'gold'],
+    motivation: ['orange', 'gold'],
+    gratitude: ['gold', 'rose'],
+    apology: ['cyan', 'gold'],
+  };
+  return map[emotionId] || ['rose', 'gold'];
+}
+
+function updatePhotoAsciiPreview() {
+  if (!state.photoImage) return;
+  const [primaryColor, secondaryColor] = getEmotionPalette(state.selectedEmotion);
+  state.photoData = convertImageToAscii(state.photoImage, {
+    style: el.photoStyleSelect.value,
+    contrast: Number(el.photoContrastInput.value || 1.25),
+    invert: Boolean(el.photoInvertCheck.checked),
+    primaryColor,
+    secondaryColor,
+  });
+
+  photoPreviewCanvas.clear();
+  for (let y = 0; y < state.photoData.h; y++) {
+    const chars = state.photoData.r[y];
+    const cols = state.photoData.c[y];
+    for (let x = 0; x < state.photoData.w; x++) {
+      photoPreviewCanvas.set(x, y, chars[x] || ' ', CHAR_TO_COLOR[cols[x]] || 'white');
+    }
+  }
+  el.photoPreviewScreen.innerHTML = photoPreviewCanvas.toHTML();
+}
+
+function clearAttachedPhoto() {
+  state.photoImage = null;
+  state.photoData = null;
+  el.photoFileInput.value = '';
+  el.photoEditorBox.classList.add('hidden');
+  el.removePhotoBtn.classList.add('hidden');
+  el.choosePhotoBtn.textContent = '+ Choose Photo';
+}
+
     btn.append(head, art, tag);
     btn.addEventListener('click', () => {
       state.selectedEmotion = emo.id;
       applyEmotionTheme(emo.id);
       renderEmotionCards();
       startMiniPreview();
+      if (state.photoImage) updatePhotoAsciiPreview();
     });
     el.emotionGrid.appendChild(btn);
   }
@@ -2406,6 +2697,7 @@ async function handleEncrypt() {
       sender,
       unlockAt,
       burn,
+      photo: state.photoData,
     });
     el.encodedToken.textContent = token;
     const cipherLabel = token.startsWith('TTY0.')
@@ -2416,6 +2708,7 @@ async function handleEncrypt() {
     const extras = [];
     if (unlockAt) extras.push('⏳ Time Capsule');
     if (burn) extras.push('🔥 Burn Once');
+    if (state.photoData) extras.push('📷 ASCII Photo');
     el.outputModeBadge.textContent = token.startsWith('TTY0.')
       ? '🔓 OPEN CODE READY (NO KEY NEEDED)'
       : '🔒 LOCKED CODE READY';
@@ -2447,6 +2740,7 @@ async function handleDecryptAndPlay() {
       sender: payload.sender,
       burn: payload.burn,
       id: payload.id,
+      photo: payload.photo,
       isPreview: false,
     });
   } catch (err) {
@@ -2521,6 +2815,7 @@ function startTimeCapsuleTheater(payload) {
         sender: payload.sender,
         burn: payload.burn,
         id: payload.id,
+        photo: payload.photo,
         isPreview: false,
       });
       return;
@@ -2605,13 +2900,15 @@ function startTheater(experience) {
 
   el.skipAnimBtn.classList.remove('hidden');
   el.replayAnimBtn.classList.remove('hidden');
+  el.terminalStage.classList.remove('with-photo');
   el.asciiScreen.classList.remove('dimmed');
   el.revealOverlay.classList.add('hidden');
   el.revealMessageText.textContent = '';
   el.revealMessageText.classList.remove('done');
   el.theaterEmotionBadge.textContent = `${emo.icon} ${emo.label.toUpperCase()}`;
 
-  const totalFrames = emo.durationFrames;
+  const photoFrames = experience.photo ? 132 : 0;
+  const totalFrames = emo.durationFrames + photoFrames;
   const totalSec = totalFrames / FPS;
   let startTime = null;
   let lastFrame = -1;
@@ -2625,9 +2922,16 @@ function startTheater(experience) {
 
     if (frame !== lastFrame) {
       lastFrame = frame;
-      renderSceneFrame(emo.id, frame, totalFrames, theaterCanvas);
+      if (frame < emo.durationFrames) {
+        renderSceneFrame(emo.id, frame, emo.durationFrames, theaterCanvas);
+        el.theaterActLabel.textContent = getActTitle(emo, frame);
+      } else {
+        renderPhotoReveal(theaterCanvas, frame - emo.durationFrames, experience.photo, {
+          sender: experience.sender,
+        });
+        el.theaterActLabel.textContent = 'ACT V // MEMORY IN ASCII';
+      }
       el.asciiScreen.innerHTML = theaterCanvas.toHTML();
-      el.theaterActLabel.textContent = getActTitle(emo, frame);
       el.theaterTimer.textContent = `${formatSeconds(frame / FPS)} / ${formatSeconds(totalSec)}`;
       el.theaterProgress.style.width = `${((frame + 1) / totalFrames) * 100}%`;
     }
@@ -2643,7 +2947,7 @@ function startTheater(experience) {
   state.animRafId = requestAnimationFrame(tick);
 }
 
-function startLivingBackdrop(emo) {
+function startLivingBackdrop(emo, experience) {
   if (state.livingBgRafId !== null) cancelAnimationFrame(state.livingBgRafId);
   let start = null;
   let lastTick = -1;
@@ -2658,7 +2962,11 @@ function startLivingBackdrop(emo) {
     const step = Math.floor((now - start) / FRAME_MS);
     if (step !== lastTick) {
       lastTick = step;
-      renderSceneFrame(emo.id, baseFrame + step, emo.durationFrames, theaterCanvas);
+      if (experience.photo) {
+        renderPhotoReveal(theaterCanvas, 120 + step, experience.photo, { sender: experience.sender });
+      } else {
+        renderSceneFrame(emo.id, baseFrame + step, emo.durationFrames, theaterCanvas);
+      }
       el.asciiScreen.innerHTML = theaterCanvas.toHTML();
     }
     state.livingBgRafId = requestAnimationFrame(loop);
@@ -2675,11 +2983,18 @@ function triggerMessageReveal() {
   }
   audio.stop();
 
-  const { emotion, message, sender, isPreview, burn, id } = state.currentExperience;
+  const { emotion, message, sender, isPreview, burn, id, photo } = state.currentExperience;
   const emo = EMOTIONS[emotion];
-  renderSceneFrame(emo.id, emo.durationFrames - 1, emo.durationFrames, theaterCanvas);
+  if (photo) {
+    renderPhotoReveal(theaterCanvas, 120, photo, { sender });
+    el.asciiScreen.classList.remove('dimmed');
+    el.terminalStage.classList.add('with-photo');
+  } else {
+    renderSceneFrame(emo.id, emo.durationFrames - 1, emo.durationFrames, theaterCanvas);
+    el.asciiScreen.classList.add('dimmed');
+    el.terminalStage.classList.remove('with-photo');
+  }
   el.asciiScreen.innerHTML = theaterCanvas.toHTML();
-  el.asciiScreen.classList.add('dimmed');
   el.theaterProgress.style.width = '100%';
   el.theaterActLabel.textContent = isPreview ? 'PREVIEW COMPLETE' : 'MESSAGE DECODED';
 
@@ -2701,7 +3016,7 @@ function triggerMessageReveal() {
   el.revealSenderTag.textContent = sender ? `from ${sender}` : '';
   el.revealOverlay.classList.remove('hidden');
 
-  startLivingBackdrop(emo);
+  startLivingBackdrop(emo, state.currentExperience);
   audio.playRevealChord(emo.id);
   runScrambleTypewriter(message);
 }
@@ -2814,6 +3129,29 @@ function wireEvents() {
     });
   });
 
+  el.choosePhotoBtn.addEventListener('click', () => el.photoFileInput.click());
+  el.removePhotoBtn.addEventListener('click', clearAttachedPhoto);
+  el.photoFileInput.addEventListener('change', () => {
+    const file = el.photoFileInput.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        state.photoImage = img;
+        el.photoEditorBox.classList.remove('hidden');
+        el.removePhotoBtn.classList.remove('hidden');
+        el.choosePhotoBtn.textContent = 'Change Photo';
+        updatePhotoAsciiPreview();
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+  el.photoStyleSelect.addEventListener('change', updatePhotoAsciiPreview);
+  el.photoContrastInput.addEventListener('input', updatePhotoAsciiPreview);
+  el.photoInvertCheck.addEventListener('change', updatePhotoAsciiPreview);
+
   el.genKeyBtn.addEventListener('click', generateSecretKey);
   el.encryptBtn.addEventListener('click', handleEncrypt);
   el.decryptBtn.addEventListener('click', handleDecryptAndPlay);
@@ -2824,6 +3162,7 @@ function wireEvents() {
       emotion: emo.id,
       message: SAMPLES[emo.id].message,
       sender: 'Preview Mode',
+      photo: state.photoData,
       isPreview: true,
     });
   });

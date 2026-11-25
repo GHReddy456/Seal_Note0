@@ -7,6 +7,7 @@ const rootDir = path.resolve(__dirname, '..');
 
 const MODULE_ORDER = [
   'src/emotions.js',
+  'src/photo-ascii.js',
   'src/crypto.js',
   'src/ascii-canvas.js',
   'src/scenes.js',

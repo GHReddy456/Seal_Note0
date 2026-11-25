@@ -1,4 +1,5 @@
 import { AsciiCanvas } from './ascii-canvas.js';
+import { CHAR_TO_COLOR } from './photo-ascii.js';
 
 export const CANVAS_COLS = 80;
 export const CANVAS_ROWS = 24;
@@ -1185,5 +1186,56 @@ export function renderBurnAsh(canvas, frame, message, { alreadyBurned = false } 
     canvas.text(Math.floor((canvas.cols - status.length) / 2), 21, status, 'orange');
   }
 
+  return canvas;
+}
+
+/**
+ * Renders the Stardust Assembly + crisp display of an attached ASCII portrait photo.
+ */
+export function renderPhotoReveal(canvas, frame, photo, { sender = '' } = {}) {
+  canvas.clear();
+  drawStars(canvas, frame, 36, 22, 'dim');
+
+  const w = photo.w || (photo.r[0] ? photo.r[0].length : 58);
+  const h = photo.h || photo.r.length;
+  const ox = Math.max(1, Math.floor((canvas.cols - w) / 2));
+  const oy = Math.max(1, Math.floor((22 - h) / 2));
+
+  // Subtle corner brackets around portrait
+  canvas.text(ox - 1, oy - 1, '+' + '-'.repeat(w) + '+', 'muted');
+  for (let r = 0; r < h; r++) {
+    canvas.set(ox - 1, oy + r, '|', 'dim');
+    canvas.set(ox + w, oy + r, '|', 'dim');
+  }
+  canvas.text(ox - 1, oy + h, '+' + '-'.repeat(w) + '+', 'muted');
+
+  const progress = clamp(frame / 96, 0, 1.25);
+  const scanGlyphs = '*+#✦:·';
+
+  for (let y = 0; y < h; y++) {
+    const rowChars = photo.r[y] || '';
+    const rowCols = photo.c[y] || '';
+    for (let x = 0; x < w; x++) {
+      const ch = rowChars[x] || ' ';
+      const colCode = rowCols[x] || 'w';
+      const color = CHAR_TO_COLOR[colCode] || 'white';
+      const threshold = (y / Math.max(1, h)) * 0.72 + hash01(y * 73 + x * 19 + 3) * 0.28;
+      const delta = progress - threshold;
+
+      if (delta < 0) {
+        if (hash01(x * 13 + y * 31 + Math.floor(frame / 4)) > 0.92) {
+          canvas.set(ox + x, oy + y, '·', 'dim');
+        }
+      } else if (delta < 0.08 && ch !== ' ') {
+        const g = scanGlyphs[(x + y + frame) % scanGlyphs.length];
+        canvas.set(ox + x, oy + y, g, 'bright');
+      } else {
+        canvas.set(ox + x, oy + y, ch, color);
+      }
+    }
+  }
+
+  const label = sender ? `// MEMORY DECODED · FROM ${sender.toUpperCase()}` : '// MEMORY DECODED IN ASCII';
+  canvas.text(Math.max(1, Math.floor((canvas.cols - label.length) / 2)), 23, label, 'bright');
   return canvas;
 }

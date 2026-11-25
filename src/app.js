@@ -1,7 +1,8 @@
 import { EMOTIONS, EMOTION_LIST } from './emotions.js';
+import { convertImageToAscii, PHOTO_COLS, PHOTO_ROWS, CHAR_TO_COLOR } from './photo-ascii.js';
 import { encryptMessage, decryptMessage, inspectCode } from './crypto.js';
 import { AsciiCanvas, CANVAS_COLS, CANVAS_ROWS } from './ascii-canvas.js';
-import { renderSceneFrame, renderTimeCapsule, renderBurnAsh } from './scenes.js';
+import { renderSceneFrame, renderTimeCapsule, renderBurnAsh, renderPhotoReveal } from './scenes.js';
 import { EmotionAudio } from './audio.js';
 
 const FPS = 24;
@@ -61,6 +62,8 @@ const state = {
   livingBgRafId: null,
   revealTimerId: null,
   presetUnlockOffsetMs: null,
+  photoImage: null,
+  photoData: null,
   currentExperience: null,
 };
 
@@ -89,6 +92,7 @@ function markMessageBurned(id) {
 const audio = new EmotionAudio();
 const theaterCanvas = new AsciiCanvas(CANVAS_COLS, CANVAS_ROWS);
 const previewCanvas = new AsciiCanvas(CANVAS_COLS, CANVAS_ROWS);
+const photoPreviewCanvas = new AsciiCanvas(PHOTO_COLS, PHOTO_ROWS);
 
 const el = {
   brandSubtitle: document.getElementById('brandSubtitle'),
@@ -116,6 +120,14 @@ const el = {
   unlockAtInput: document.getElementById('unlockAtInput'),
   unlockPresetNote: document.getElementById('unlockPresetNote'),
   burnToggle: document.getElementById('burnToggle'),
+  photoFileInput: document.getElementById('photoFileInput'),
+  choosePhotoBtn: document.getElementById('choosePhotoBtn'),
+  removePhotoBtn: document.getElementById('removePhotoBtn'),
+  photoEditorBox: document.getElementById('photoEditorBox'),
+  photoPreviewScreen: document.getElementById('photoPreviewScreen'),
+  photoStyleSelect: document.getElementById('photoStyleSelect'),
+  photoContrastInput: document.getElementById('photoContrastInput'),
+  photoInvertCheck: document.getElementById('photoInvertCheck'),
   genKeyBtn: document.getElementById('genKeyBtn'),
   encryptBtn: document.getElementById('encryptBtn'),
   encodeError: document.getElementById('encodeError'),
@@ -136,6 +148,7 @@ const el = {
   toggleSound: document.getElementById('toggleSound'),
   soundLabel: document.getElementById('soundLabel'),
   toggleCrt: document.getElementById('toggleCrt'),
+  terminalStage: document.getElementById('terminalStage'),
   asciiScreen: document.getElementById('asciiScreen'),
   theaterEmotionBadge: document.getElementById('theaterEmotionBadge'),
   theaterActLabel: document.getElementById('theaterActLabel'),
@@ -244,12 +257,58 @@ function renderEmotionCards() {
     tag.className = 'emotion-tagline';
     tag.textContent = emo.tagline;
 
+function getEmotionPalette(emotionId) {
+  const map = {
+    love: ['rose', 'gold'],
+    happiness: ['gold', 'cyan'],
+    sadness: ['blue', 'gold'],
+    missing: ['violet', 'rose'],
+    friendship: ['orange', 'gold'],
+    motivation: ['orange', 'gold'],
+    gratitude: ['gold', 'rose'],
+    apology: ['cyan', 'gold'],
+  };
+  return map[emotionId] || ['rose', 'gold'];
+}
+
+function updatePhotoAsciiPreview() {
+  if (!state.photoImage) return;
+  const [primaryColor, secondaryColor] = getEmotionPalette(state.selectedEmotion);
+  state.photoData = convertImageToAscii(state.photoImage, {
+    style: el.photoStyleSelect.value,
+    contrast: Number(el.photoContrastInput.value || 1.25),
+    invert: Boolean(el.photoInvertCheck.checked),
+    primaryColor,
+    secondaryColor,
+  });
+
+  photoPreviewCanvas.clear();
+  for (let y = 0; y < state.photoData.h; y++) {
+    const chars = state.photoData.r[y];
+    const cols = state.photoData.c[y];
+    for (let x = 0; x < state.photoData.w; x++) {
+      photoPreviewCanvas.set(x, y, chars[x] || ' ', CHAR_TO_COLOR[cols[x]] || 'white');
+    }
+  }
+  el.photoPreviewScreen.innerHTML = photoPreviewCanvas.toHTML();
+}
+
+function clearAttachedPhoto() {
+  state.photoImage = null;
+  state.photoData = null;
+  el.photoFileInput.value = '';
+  el.photoEditorBox.classList.add('hidden');
+  el.removePhotoBtn.classList.add('hidden');
+  el.choosePhotoBtn.textContent = '+ Choose Photo';
+}
+
     btn.append(head, art, tag);
     btn.addEventListener('click', () => {
       state.selectedEmotion = emo.id;
       applyEmotionTheme(emo.id);
       renderEmotionCards();
       startMiniPreview();
+      if (state.photoImage) updatePhotoAsciiPreview();
     });
     el.emotionGrid.appendChild(btn);
   }
@@ -351,6 +410,7 @@ async function handleEncrypt() {
       sender,
       unlockAt,
       burn,
+      photo: state.photoData,
     });
     el.encodedToken.textContent = token;
     const cipherLabel = token.startsWith('TTY0.')
@@ -361,6 +421,7 @@ async function handleEncrypt() {
     const extras = [];
     if (unlockAt) extras.push('⏳ Time Capsule');
     if (burn) extras.push('🔥 Burn Once');
+    if (state.photoData) extras.push('📷 ASCII Photo');
     el.outputModeBadge.textContent = token.startsWith('TTY0.')
       ? '🔓 OPEN CODE READY (NO KEY NEEDED)'
       : '🔒 LOCKED CODE READY';
@@ -392,6 +453,7 @@ async function handleDecryptAndPlay() {
       sender: payload.sender,
       burn: payload.burn,
       id: payload.id,
+      photo: payload.photo,
       isPreview: false,
     });
   } catch (err) {
@@ -466,6 +528,7 @@ function startTimeCapsuleTheater(payload) {
         sender: payload.sender,
         burn: payload.burn,
         id: payload.id,
+        photo: payload.photo,
         isPreview: false,
       });
       return;
@@ -550,13 +613,15 @@ function startTheater(experience) {
 
   el.skipAnimBtn.classList.remove('hidden');
   el.replayAnimBtn.classList.remove('hidden');
+  el.terminalStage.classList.remove('with-photo');
   el.asciiScreen.classList.remove('dimmed');
   el.revealOverlay.classList.add('hidden');
   el.revealMessageText.textContent = '';
   el.revealMessageText.classList.remove('done');
   el.theaterEmotionBadge.textContent = `${emo.icon} ${emo.label.toUpperCase()}`;
 
-  const totalFrames = emo.durationFrames;
+  const photoFrames = experience.photo ? 132 : 0;
+  const totalFrames = emo.durationFrames + photoFrames;
   const totalSec = totalFrames / FPS;
   let startTime = null;
   let lastFrame = -1;
@@ -570,9 +635,16 @@ function startTheater(experience) {
 
     if (frame !== lastFrame) {
       lastFrame = frame;
-      renderSceneFrame(emo.id, frame, totalFrames, theaterCanvas);
+      if (frame < emo.durationFrames) {
+        renderSceneFrame(emo.id, frame, emo.durationFrames, theaterCanvas);
+        el.theaterActLabel.textContent = getActTitle(emo, frame);
+      } else {
+        renderPhotoReveal(theaterCanvas, frame - emo.durationFrames, experience.photo, {
+          sender: experience.sender,
+        });
+        el.theaterActLabel.textContent = 'ACT V // MEMORY IN ASCII';
+      }
       el.asciiScreen.innerHTML = theaterCanvas.toHTML();
-      el.theaterActLabel.textContent = getActTitle(emo, frame);
       el.theaterTimer.textContent = `${formatSeconds(frame / FPS)} / ${formatSeconds(totalSec)}`;
       el.theaterProgress.style.width = `${((frame + 1) / totalFrames) * 100}%`;
     }
@@ -588,7 +660,7 @@ function startTheater(experience) {
   state.animRafId = requestAnimationFrame(tick);
 }
 
-function startLivingBackdrop(emo) {
+function startLivingBackdrop(emo, experience) {
   if (state.livingBgRafId !== null) cancelAnimationFrame(state.livingBgRafId);
   let start = null;
   let lastTick = -1;
@@ -603,7 +675,11 @@ function startLivingBackdrop(emo) {
     const step = Math.floor((now - start) / FRAME_MS);
     if (step !== lastTick) {
       lastTick = step;
-      renderSceneFrame(emo.id, baseFrame + step, emo.durationFrames, theaterCanvas);
+      if (experience.photo) {
+        renderPhotoReveal(theaterCanvas, 120 + step, experience.photo, { sender: experience.sender });
+      } else {
+        renderSceneFrame(emo.id, baseFrame + step, emo.durationFrames, theaterCanvas);
+      }
       el.asciiScreen.innerHTML = theaterCanvas.toHTML();
     }
     state.livingBgRafId = requestAnimationFrame(loop);
@@ -620,11 +696,18 @@ function triggerMessageReveal() {
   }
   audio.stop();
 
-  const { emotion, message, sender, isPreview, burn, id } = state.currentExperience;
+  const { emotion, message, sender, isPreview, burn, id, photo } = state.currentExperience;
   const emo = EMOTIONS[emotion];
-  renderSceneFrame(emo.id, emo.durationFrames - 1, emo.durationFrames, theaterCanvas);
+  if (photo) {
+    renderPhotoReveal(theaterCanvas, 120, photo, { sender });
+    el.asciiScreen.classList.remove('dimmed');
+    el.terminalStage.classList.add('with-photo');
+  } else {
+    renderSceneFrame(emo.id, emo.durationFrames - 1, emo.durationFrames, theaterCanvas);
+    el.asciiScreen.classList.add('dimmed');
+    el.terminalStage.classList.remove('with-photo');
+  }
   el.asciiScreen.innerHTML = theaterCanvas.toHTML();
-  el.asciiScreen.classList.add('dimmed');
   el.theaterProgress.style.width = '100%';
   el.theaterActLabel.textContent = isPreview ? 'PREVIEW COMPLETE' : 'MESSAGE DECODED';
 
@@ -646,7 +729,7 @@ function triggerMessageReveal() {
   el.revealSenderTag.textContent = sender ? `from ${sender}` : '';
   el.revealOverlay.classList.remove('hidden');
 
-  startLivingBackdrop(emo);
+  startLivingBackdrop(emo, state.currentExperience);
   audio.playRevealChord(emo.id);
   runScrambleTypewriter(message);
 }
@@ -759,6 +842,29 @@ function wireEvents() {
     });
   });
 
+  el.choosePhotoBtn.addEventListener('click', () => el.photoFileInput.click());
+  el.removePhotoBtn.addEventListener('click', clearAttachedPhoto);
+  el.photoFileInput.addEventListener('change', () => {
+    const file = el.photoFileInput.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        state.photoImage = img;
+        el.photoEditorBox.classList.remove('hidden');
+        el.removePhotoBtn.classList.remove('hidden');
+        el.choosePhotoBtn.textContent = 'Change Photo';
+        updatePhotoAsciiPreview();
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+  el.photoStyleSelect.addEventListener('change', updatePhotoAsciiPreview);
+  el.photoContrastInput.addEventListener('input', updatePhotoAsciiPreview);
+  el.photoInvertCheck.addEventListener('change', updatePhotoAsciiPreview);
+
   el.genKeyBtn.addEventListener('click', generateSecretKey);
   el.encryptBtn.addEventListener('click', handleEncrypt);
   el.decryptBtn.addEventListener('click', handleDecryptAndPlay);
@@ -769,6 +875,7 @@ function wireEvents() {
       emotion: emo.id,
       message: SAMPLES[emo.id].message,
       sender: 'Preview Mode',
+      photo: state.photoData,
       isPreview: true,
     });
   });
