@@ -2420,6 +2420,7 @@ const state = {
   mode: 'encode',
   receiverOnly: false,
   selectedEmotion: 'love',
+  theme: 'dark',
   crtOn: true,
   soundOn: true,
   animRafId: null,
@@ -2433,6 +2434,7 @@ const state = {
 };
 
 const BURN_STORAGE_KEY = 'tty_feel_burned_ids';
+const THEME_STORAGE_KEY = 'tty_feel_theme';
 
 function getBurnedSet() {
   try {
@@ -2510,6 +2512,9 @@ const el = {
   decryptBtn: document.getElementById('decryptBtn'),
   decodeError: document.getElementById('decodeError'),
   sampleButtons: document.getElementById('sampleButtons'),
+  starfieldBg: document.getElementById('starfieldBg'),
+  toggleTheme: document.getElementById('toggleTheme'),
+  themeLabel: document.getElementById('themeLabel'),
   toggleSound: document.getElementById('toggleSound'),
   soundLabel: document.getElementById('soundLabel'),
   toggleCrt: document.getElementById('toggleCrt'),
@@ -3283,6 +3288,11 @@ function wireEvents() {
     });
   });
 
+  el.toggleTheme.addEventListener('click', () => {
+    const next = state.theme === 'dark' ? 'light' : 'dark';
+    applyStudioTheme(next, true);
+  });
+
   el.toggleSound.addEventListener('click', () => {
     state.soundOn = !state.soundOn;
     audio.setMuted(!state.soundOn);
@@ -3367,13 +3377,87 @@ function checkUrlForSharedCode() {
   setReceiverOnlyMode(false);
 }
 
+function applyStudioTheme(theme, persist = false) {
+  state.theme = theme === 'light' ? 'light' : 'dark';
+  document.body.classList.toggle('theme-light', state.theme === 'light');
+  el.themeLabel.textContent = `Theme: ${state.theme === 'light' ? 'Light' : 'Dark'}`;
+  if (persist) {
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, state.theme);
+    } catch {
+      // Ignore storage restrictions.
+    }
+  }
+}
+
+function initSavedTheme() {
+  try {
+    const saved = localStorage.getItem(THEME_STORAGE_KEY);
+    if (saved === 'light' || saved === 'dark') {
+      applyStudioTheme(saved, false);
+      return;
+    }
+  } catch {
+    // Ignore storage restrictions.
+  }
+  applyStudioTheme('dark', false);
+}
+
+function startStarfieldBackdrop() {
+  const canvasEl = el.starfieldBg;
+  if (!canvasEl || typeof canvasEl.getContext !== 'function') return;
+  const ctx = canvasEl.getContext('2d');
+  if (!ctx) return;
+
+  const stars = Array.from({ length: 70 }, (_, i) => ({
+    x: ((Math.sin(i * 91.7) * 0.5 + 0.5) * 1.1) % 1,
+    y: ((Math.cos(i * 47.3) * 0.5 + 0.5) * 1.1) % 1,
+    r: (i % 3) * 0.55 + 0.65,
+    speed: 0.000018 + (i % 5) * 0.000007,
+    phase: i * 0.7,
+  }));
+
+  const resize = () => {
+    canvasEl.width = window.innerWidth || 1200;
+    canvasEl.height = window.innerHeight || 800;
+  };
+  resize();
+  window.addEventListener('resize', resize);
+
+  const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  let last = performance.now();
+
+  const draw = (now) => {
+    const dt = Math.min(64, now - last);
+    last = now;
+    const w = canvasEl.width;
+    const h = canvasEl.height;
+    ctx.clearRect(0, 0, w, h);
+
+    const isLight = state.theme === 'light';
+    for (const s of stars) {
+      if (!reduced) s.y = (s.y - s.speed * dt + 1) % 1;
+      const alpha = 0.25 + 0.55 * (0.5 + 0.5 * Math.sin(now * 0.0014 + s.phase));
+      ctx.fillStyle = isLight ? `rgba(15, 23, 42, ${alpha * 0.35})` : `rgba(226, 232, 240, ${alpha * 0.65})`;
+      ctx.beginPath();
+      ctx.arc(s.x * w, s.y * h, s.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    if (!reduced) requestAnimationFrame(draw);
+  };
+
+  requestAnimationFrame(draw);
+}
+
 window.addEventListener('hashchange', checkUrlForSharedCode);
 
+initSavedTheme();
 renderEmotionCards();
 renderSampleButtons();
 applyEmotionTheme(state.selectedEmotion);
 wireEvents();
 checkUrlForSharedCode();
 startMiniPreview();
+startStarfieldBackdrop();
 
 })();

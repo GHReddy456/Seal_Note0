@@ -1,24 +1,58 @@
 :root {
-  --bg: #0b0e15;
-  --surface-1: #141925;
-  --surface-2: #1b2233;
-  --surface-3: #242d42;
-  --surface-input: #0e131d;
-  --border: rgba(226, 232, 240, 0.16);
-  --border-strong: rgba(226, 232, 240, 0.28);
-  --text: #f8fafc;
-  --muted: #b6c2d6;
-  --placeholder: #7d8ca6;
+  --bg: #0c1018;
+  --surface-1: #161c2b;
+  --surface-2: #1e2639;
+  --surface-3: #28334b;
+  --surface-input: #101522;
+  --border: rgba(226, 232, 240, 0.18);
+  --border-strong: rgba(226, 232, 240, 0.3);
+  --text: #ffffff;
+  --muted: #c2cde0;
+  --placeholder: #8595b0;
   --accent: #ff5e8a;
   --secondary: #ffd166;
-  --glow: rgba(255, 94, 138, 0.34);
-  --tint: rgba(255, 94, 138, 0.11);
-  --shadow-tint: 0 20px 50px rgba(4, 7, 15, 0.65);
+  --glow: rgba(255, 94, 138, 0.36);
+  --tint: rgba(255, 94, 138, 0.12);
+  --shadow-tint: 0 22px 52px rgba(4, 7, 15, 0.6);
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.12);
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --dur-color: 300ms;
   --dur-move: 500ms;
   --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+body.theme-light {
+  --bg: #f5f2eb;
+  --surface-1: #ffffff;
+  --surface-2: #efece3;
+  --surface-3: #e4dfd3;
+  --surface-input: #ffffff;
+  --border: rgba(15, 23, 42, 0.14);
+  --border-strong: rgba(15, 23, 42, 0.24);
+  --text: #0f172a;
+  --muted: #475569;
+  --placeholder: #94a3b8;
+  --shadow-tint: 0 18px 44px rgba(15, 23, 42, 0.09);
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+.starfield-bg {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.55;
+}
+
+body.theme-light .starfield-bg {
+  opacity: 0.25;
+}
+
+body.theme-light.crt-enabled::after {
+  opacity: 0.35;
 }
 
 * {
@@ -131,10 +165,48 @@ a:focus-visible {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  background: rgba(20, 25, 37, 0.88);
+  background: rgba(22, 28, 43, 0.88);
   border: 1px solid var(--border-strong);
   border-radius: 12px;
   backdrop-filter: blur(14px);
+  box-shadow: var(--glass-highlight);
+}
+
+body.theme-light .topbar {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--tint);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 0 6px;
+  margin-right: 6px;
+}
+
+body.theme-light .step-num,
+body.theme-light .eyebrow,
+body.theme-light .mono-accent,
+body.theme-light .link-btn,
+body.theme-light .ghost-btn {
+  color: #0f172a;
+  background: var(--surface-3);
+  border-color: var(--border-strong);
+}
+
+body.theme-light .eyebrow,
+body.theme-light .mono-accent,
+body.theme-light .link-btn,
+body.theme-light .ghost-btn {
+  background: transparent;
 }
 
 .brand {
@@ -260,7 +332,7 @@ a:focus-visible {
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 24px 24px 32px;
-  box-shadow: var(--shadow-tint);
+  box-shadow: var(--shadow-tint), var(--glass-highlight);
 }
 
 .hero-strip {
@@ -295,6 +367,57 @@ a:focus-visible {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+body.theme-light .hero-strip h1 {
+  background: linear-gradient(90deg, #0f172a 0%, #475569 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+body.theme-light .hero-badge-title,
+body.theme-light .burn-title {
+  color: var(--text);
+}
+
+body.theme-light .mini-emotion-pill {
+  background: #141925;
+}
+
+body.theme-light .mini-preview-bar,
+body.theme-light .terminal-chrome {
+  background: #141925;
+  color: #f8fafc;
+}
+
+body.theme-light .mini-preview-bar .mono-muted,
+body.theme-light .terminal-chrome .mono-muted,
+body.theme-light .terminal-chrome .act-label,
+body.theme-light .reveal-sender {
+  color: #b6c2d6;
+}
+
+body.theme-light .reveal-message {
+  color: #f8fafc;
+}
+
+body.theme-light .mini-preview-title {
+  color: #f8fafc;
+}
+
+body.theme-light .mini-btn {
+  background: #1e2639;
+  color: #f8fafc;
+  border-color: rgba(226, 232, 240, 0.2);
+}
+
+body.theme-light .code-status-open {
+  color: #15803d !important;
+}
+
+body.theme-light .code-status-locked {
+  color: #b45309 !important;
 }
 
 .subtitle {
@@ -358,6 +481,7 @@ a:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  box-shadow: var(--glass-highlight);
 }
 
 .field-group {
@@ -695,6 +819,7 @@ input:focus {
   padding: 12px;
   cursor: pointer;
   color: var(--text);
+  box-shadow: var(--glass-highlight);
   transition: transform var(--dur-move) var(--ease), border-color var(--dur-color) var(--ease), box-shadow var(--dur-color) var(--ease), background-color var(--dur-color) var(--ease);
 }
 
@@ -708,9 +833,9 @@ input:focus {
 }
 
 .emotion-card.selected {
-  background: var(--surface-3);
+  background: color-mix(in srgb, var(--card-accent, var(--accent)) 14%, var(--surface-3));
   border-color: var(--card-accent, var(--accent));
-  box-shadow: 0 0 22px var(--card-glow, var(--glow));
+  box-shadow: 0 0 24px var(--card-glow, var(--glow)), var(--glass-highlight);
 }
 
 .emotion-card-head {
@@ -765,10 +890,10 @@ input:focus {
 /* ==================== LIVE MINI ASCII PREVIEW ==================== */
 .mini-preview-card {
   background: #080b12;
-  border: 1px solid var(--border-strong);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, rgba(255, 255, 255, 0.16));
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 12px 32px rgba(4, 7, 15, 0.55), 0 0 24px var(--tint);
+  box-shadow: 0 16px 36px rgba(4, 7, 15, 0.5), 0 0 28px var(--tint);
 }
 
 .mini-preview-bar {
@@ -1087,10 +1212,10 @@ input:focus {
 
 .terminal-window {
   background: #080b12;
-  border: 1px solid var(--border-strong);
+  border: 1px solid color-mix(in srgb, var(--accent) 48%, rgba(255, 255, 255, 0.2));
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: var(--shadow-tint), 0 0 42px var(--tint);
+  box-shadow: var(--shadow-tint), 0 0 48px var(--tint);
 }
 
 .terminal-chrome {

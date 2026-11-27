@@ -15,6 +15,7 @@
 </head>
 <body class="crt-enabled">
   <a href="#mainContent" class="skip-link">Skip to content</a>
+  <canvas id="starfieldBg" class="starfield-bg" aria-hidden="true"></canvas>
   <div class="ambient-bg" aria-hidden="true"></div>
   <div class="grain-overlay" aria-hidden="true"></div>
 
@@ -33,6 +34,9 @@
     </nav>
 
     <div class="topbar-controls">
+      <button id="toggleTheme" class="icon-btn" type="button" title="Switch between Dark and Light studio theme">
+        <span id="themeLabel">Theme: Dark</span>
+      </button>
       <button id="toggleSound" class="icon-btn" type="button" title="Toggle ambient synth audio">
         <svg id="soundIcon" class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l12-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm12-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>
         <span id="soundLabel">Sound: ON</span>
@@ -65,7 +69,7 @@
         <div class="left-studio">
           <div class="field-group">
             <div class="label-row">
-              <label>1. Choose the emotion</label>
+              <label><span class="step-num">01</span> Choose the emotion</label>
               <span id="selectedEmotionPill" class="mini-emotion-pill">♥ Love</span>
             </div>
             <div id="emotionGrid" class="emotion-grid" role="radiogroup" aria-label="Select emotion"></div>
@@ -90,7 +94,7 @@
         <div class="field-column compose-card">
           <div class="field-group">
             <div class="label-row">
-              <label for="messageInput">2. Write your secret message</label>
+              <label for="messageInput"><span class="step-num">02</span> Write your secret message</label>
               <span id="charCount" class="mono-muted">0 chars</span>
             </div>
             <textarea
@@ -108,7 +112,7 @@
 
             <div class="field-group">
               <div class="label-row">
-                <label for="encodeKeyInput">3. Secret key <span class="optional-tag">(optional)</span></label>
+                <label for="encodeKeyInput"><span class="step-num">03</span> Secret key <span class="optional-tag">(optional)</span></label>
                 <button id="genKeyBtn" class="link-btn" type="button">Generate key</button>
               </div>
               <div class="input-with-btn">
@@ -287,7 +291,7 @@
         <div class="decode-card">
           <div id="decodeCodeGroup" class="field-group">
             <div class="label-row">
-              <label for="decodeCodeInput">1. Paste secret code</label>
+              <label for="decodeCodeInput"><span class="step-num">01</span> Paste secret code</label>
               <span id="decodeCodeStatus" class="mono-muted">Waiting for code...</span>
             </div>
             <textarea
@@ -309,7 +313,7 @@
           </div>
 
           <div id="decodeKeyGroup" class="field-group">
-            <label for="decodeKeyInput">2. Secret key <span class="optional-tag">(only if locked)</span></label>
+            <label for="decodeKeyInput"><span class="step-num">02</span> Secret key <span class="optional-tag">(only if locked)</span></label>
             <div class="input-with-btn">
               <input id="decodeKeyInput" type="password" placeholder="Optional for open codes" />
               <button class="peek-btn" data-peek="decodeKeyInput" type="button" title="Show or hide key">Show</button>
