@@ -2610,7 +2610,7 @@ function clearAttachedPhoto() {
   el.photoFileInput.value = '';
   el.photoEditorBox.classList.add('hidden');
   el.removePhotoBtn.classList.add('hidden');
-  el.choosePhotoBtn.textContent = '+ Choose Photo';
+  el.choosePhotoBtn.textContent = 'Choose photo';
 }
 
 function renderSampleButtons() {
@@ -2629,12 +2629,12 @@ function renderSampleButtons() {
     nameSpan.textContent = `${emo.icon} ${emo.label}`;
     const playSpan = document.createElement('span');
     playSpan.className = 'sample-play-tag';
-    playSpan.textContent = '▶ Play';
+    playSpan.textContent = 'Play';
     top.append(nameSpan, playSpan);
 
     const hint = document.createElement('div');
     hint.className = 'sample-key-hint';
-    hint.textContent = sample.key ? `🔒 key: "${sample.key}"` : '🔓 open code (no key)';
+    hint.textContent = sample.key ? `Key: ${sample.key}` : 'Open code (no key)';
 
     btn.append(top, hint);
     btn.addEventListener('click', async () => {
@@ -2666,10 +2666,10 @@ function updateDecodeStatus() {
     return;
   }
   if (info.requiresKey) {
-    el.decodeCodeStatus.textContent = '🔒 Key required to unlock';
+    el.decodeCodeStatus.textContent = 'Key required to unlock';
     el.decodeCodeStatus.classList.add('code-status-locked');
   } else {
-    el.decodeCodeStatus.textContent = '🔓 Open code — no key needed!';
+    el.decodeCodeStatus.textContent = 'Open code. No key needed.';
     el.decodeCodeStatus.classList.add('code-status-open');
   }
 }
@@ -2686,6 +2686,9 @@ function generateSecretKey() {
 
 async function handleEncrypt() {
   el.encodeError.textContent = '';
+  const origLabel = el.encryptBtn.textContent;
+  el.encryptBtn.disabled = true;
+  el.encryptBtn.textContent = 'Encrypting...';
   try {
     const message = el.messageInput.value;
     const key = el.encodeKeyInput.value;
@@ -2696,7 +2699,7 @@ async function handleEncrypt() {
     } else if (el.unlockAtInput.value) {
       const parsedTs = new Date(el.unlockAtInput.value).getTime();
       if (!Number.isFinite(parsedTs) || parsedTs <= Date.now()) {
-        throw new Error('Time Capsule unlock date must be in the future.');
+        throw new Error('Time capsule unlock date must be in the future.');
       }
       unlockAt = parsedTs;
     }
@@ -2713,21 +2716,24 @@ async function handleEncrypt() {
     });
     el.encodedToken.textContent = token;
     const cipherLabel = token.startsWith('TTY0.')
-      ? 'Open Cipher'
+      ? 'Open cipher'
       : token.startsWith('TTY1.')
-        ? 'AES-256-GCM'
-        : 'SHA256-CTR';
+        ? 'AES 256 GCM'
+        : 'SHA256 CTR';
     const extras = [];
-    if (unlockAt) extras.push('⏳ Time Capsule');
-    if (burn) extras.push('🔥 Burn Once');
-    if (state.photoData) extras.push('📷 ASCII Photo');
+    if (unlockAt) extras.push('Time capsule');
+    if (burn) extras.push('Burn once');
+    if (state.photoData) extras.push('ASCII photo');
     el.outputModeBadge.textContent = token.startsWith('TTY0.')
-      ? '🔓 OPEN CODE READY (NO KEY NEEDED)'
-      : '🔒 LOCKED CODE READY';
+      ? 'Open code ready (no key needed)'
+      : 'Locked code ready';
     el.payloadStats.textContent = [`${token.length} chars`, cipherLabel, ...extras].join(' · ');
     el.encodedOutputBox.classList.remove('hidden');
   } catch (err) {
     el.encodeError.textContent = err.message;
+  } finally {
+    el.encryptBtn.disabled = false;
+    el.encryptBtn.textContent = origLabel;
   }
 }
 
@@ -3153,7 +3159,7 @@ function wireEvents() {
         state.photoImage = img;
         el.photoEditorBox.classList.remove('hidden');
         el.removePhotoBtn.classList.remove('hidden');
-        el.choosePhotoBtn.textContent = 'Change Photo';
+        el.choosePhotoBtn.textContent = 'Change photo';
         updatePhotoAsciiPreview();
       };
       img.src = reader.result;
@@ -3180,13 +3186,13 @@ function wireEvents() {
   });
 
   el.copyCodeBtn.addEventListener('click', () =>
-    copyText(el.encodedToken.textContent, el.copyCodeBtn, 'Copy Code', 'Copied!')
+    copyText(el.encodedToken.textContent, el.copyCodeBtn, 'Copy code', 'Code copied')
   );
 
   el.copyLinkBtn.addEventListener('click', () => {
     const url = new URL(window.location.href);
     url.hash = `code=${encodeURIComponent(el.encodedToken.textContent)}`;
-    copyText(url.toString(), el.copyLinkBtn, 'Copy Share Link', 'Link Copied!');
+    copyText(url.toString(), el.copyLinkBtn, 'Copy share link', 'Share link copied');
   });
 
   el.testDecodeBtn.addEventListener('click', () => {
@@ -3255,19 +3261,19 @@ function setReceiverOnlyMode(enabled, code = '') {
     const info = inspectCode(code);
     if (info.valid && !info.requiresKey) {
       el.decodeKeyGroup.classList.add('hidden');
-      el.receiverBannerText.textContent = 'This open message is ready — no secret key needed.';
-      el.decryptBtn.textContent = '▶ Unlock & Play Your Message';
+      el.receiverBannerText.textContent = 'This open message is ready. No secret key needed.';
+      el.decryptBtn.textContent = 'Unlock and play your message';
     } else {
       el.decodeKeyGroup.classList.remove('hidden');
       el.receiverBannerText.textContent = 'Enter the secret key from the sender to unlock your story.';
-      el.decryptBtn.textContent = '▶ Unlock & Play Experience';
+      el.decryptBtn.textContent = 'Unlock and play experience';
     }
   } else {
     el.brandSubtitle.textContent = 'Encrypted messages, felt in ASCII cinema';
     el.receiverLoadedBanner.classList.add('hidden');
     el.decodeCodeGroup.classList.remove('hidden');
     el.decodeKeyGroup.classList.remove('hidden');
-    el.decryptBtn.textContent = '▶ Unlock & Play Experience';
+    el.decryptBtn.textContent = 'Unlock and play experience';
   }
 }
 
