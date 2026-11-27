@@ -14,7 +14,12 @@ const MIME_TYPES = {
   '.json': 'application/json; charset=utf-8',
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
+  '.woff2': 'font/woff2',
+  '.woff': 'font/woff',
+  '.ico': 'image/x-icon',
 };
+
+const ASSET_EXTENSIONS = new Set(['.js', '.mjs', '.css', '.png', '.svg', '.jpg', '.woff2', '.woff', '.json', '.ico', '.map']);
 
 const server = http.createServer(async (req, res) => {
   try {
@@ -35,8 +40,21 @@ const server = http.createServer(async (req, res) => {
     res.end(data);
   } catch (err) {
     if (err.code === 'ENOENT') {
-      res.writeHead(404);
-      res.end('Not found');
+      const reqUrl = new URL(req.url || '/', `http://localhost:${PORT}`);
+      const ext = path.extname(reqUrl.pathname);
+      if (ASSET_EXTENSIONS.has(ext)) {
+        res.writeHead(404);
+        res.end('Not found');
+        return;
+      }
+      try {
+        const html404 = await fs.readFile(path.join(__dirname, '404.html'));
+        res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(html404);
+      } catch {
+        res.writeHead(404);
+        res.end('Not found');
+      }
     } else {
       res.writeHead(500);
       res.end('Internal server error');
@@ -45,5 +63,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, '127.0.0.1', () => {
-  console.log(`TTY//FEEL running at http://127.0.0.1:${PORT}`);
+  console.log(`Seal Note running at http://127.0.0.1:${PORT}`);
 });

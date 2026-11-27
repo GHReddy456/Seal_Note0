@@ -1,34 +1,79 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
+import esbuild from 'esbuild';
 
+const execFileAsync = promisify(execFile);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
+const distDir = path.join(rootDir, 'dist');
+const fontsDir = path.join(distDir, 'fonts');
 
-const MODULE_ORDER = [
-  'src/emotions.js',
-  'src/photo-ascii.js',
-  'src/crypto.js',
-  'src/ascii-canvas.js',
-  'src/scenes.js',
-  'src/audio.js',
-  'src/app.js',
+await fs.rm(fontsDir, { recursive: true, force: true });
+await fs.mkdir(fontsDir, { recursive: true });
+
+// 1. Copy local variable Geist & Geist Mono woff2 fonts into dist/fonts
+const fontPackages = [
+  path.join(rootDir, 'node_modules/@fontsource-variable/geist'),
+  path.join(rootDir, 'node_modules/@fontsource-variable/geist-mono'),
 ];
 
-function stripImportsAndExports(source) {
-  return source
-    .replace(/^\s*import\s+[\s\S]*?from\s+['"][^'"]+['"];?\s*$/gm, '')
-    .replace(/^\s*export\s+(?=(async\s+function|function|class|const|let|var)\b)/gm, '');
+const fontCssChunks = [];
+for (const pkgDir of fontPackages) {
+  const filesSrc = path.join(pkgDir, 'files');
+  const entries = await fs.readdir(filesSrc);
+  for (const entry of entries) {
+    if (entry.endsWith('-normal.woff2')) {
+      await fs.copyFile(path.join(filesSrc, entry), path.join(fontsDir, entry));
+    }
+  }
+  const wghtCss = await fs.readFile(path.join(pkgDir, 'wght.css'), 'utf8');
+  fontCssChunks.push(wghtCss.replace(/\.\/files\//g, './fonts/'));
 }
 
-const chunks = [];
-for (const rel of MODULE_ORDER) {
-  const raw = await fs.readFile(path.join(rootDir, rel), 'utf8');
-  chunks.push(`// ===== ${rel} =====\n${stripImportsAndExports(raw)}`);
-}
+// 2. Compile Tailwind CSS v4 from src/input.css -> dist/styles.css
+const tailwindBin = path.join(
+  rootDir,
+  'node_modules/.bin',
+  process.platform === 'win32' ? 'tailwindcss.cmd' : 'tailwindcss'
+);
+const rawCssPath = path.join(distDir, 'styles.raw.css');
 
-const bundle = `// Auto-generated from src/*.js so the app runs cleanly on both http:// and file://\n(function () {\n'use strict';\n${chunks.join('\n\n')}\n})();\n`;
+await execFileAsync(tailwindBin, [
+  '-i',
+  path.join(rootDir, 'src/input.css'),
+  '-o',
+  rawCssPath,
+  '--minify',
+]);
 
-await fs.mkdir(path.join(rootDir, 'dist'), { recursive: true });
-await fs.writeFile(path.join(rootDir, 'dist/app.bundle.js'), bundle, 'utf8');
-console.log(`Built dist/app.bundle.js (${bundle.length} bytes)`);
+const compiledCss = await fs.readFile(rawCssPath, 'utf8');
+await fs.rm(rawCssPath, { force: true });
+
+const finalCss = `${fontCssChunks.join('\n')}\n${compiledCss}`;
+await fs.writeFile(path.join(distDir, 'styles.css'), finalCss, 'utf8');
+await fs.copyFile(
+  path.join(rootDir, 'src/assets/orange-wood-tiles.svg'),
+  path.join(distDir, 'orange-wood-tiles.svg')
+);
+
+// 3. Bundle React + Motion + Phosphor + TTY//FEEL core modules via esbuild
+const outJs = path.join(distDir, 'app.bundle.js');
+await esbuild.build({
+  entryPoints: [path.join(rootDir, 'src/main.jsx')],
+  bundle: true,
+  minify: true,
+  format: 'iife',
+  jsx: 'automatic',
+  target: ['es2020'],
+  outfile: outJs,
+  define: {
+    'process.env.NODE_ENV': '"production"',
+  },
+});
+
+const jsStat = await fs.stat(outJs);
+const cssStat = await fs.stat(path.join(distDir, 'styles.css'));
+console.log(`Built dist/app.bundle.js (${jsStat.size} bytes) and dist/styles.css (${cssStat.size} bytes)`);

@@ -3,389 +3,86 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TTY//FEEL · Encrypted emotional ASCII messages</title>
-  <meta name="description" content="Encrypt secret messages and optional ASCII portraits into compact codes revealed through multi-act terminal animations." />
-  <meta property="og:title" content="TTY//FEEL · Encrypted emotional ASCII messages" />
-  <meta property="og:description" content="Turn secret messages into emotional ASCII terminal films that play before the words appear." />
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23181818'/%3E%3Crect x='1' y='1' width='30' height='30' rx='7' fill='none' stroke='%23313131'/%3E%3Cpath d='M8 11l5 5-5 5M15 21h9' stroke='%23ff5e8a' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css" />
+  <title>Seal Note · Encrypted ASCII message studio</title>
+  <meta
+    name="description"
+    content="Write a private note, choose an emotional 80×24 ASCII short film, and seal it in a browser encrypted link with zero server storage."
+  />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Seal Note" />
+  <meta property="og:url" content="https://messagefun.vercel.app/" />
+  <meta property="og:title" content="Seal Note · Send encrypted messages that feel alive" />
+  <meta
+    property="og:description"
+    content="Write a private note, choose an emotional 80×24 ASCII short film, and seal it in a link that decrypts inside your browser."
+  />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Seal Note · Encrypted ASCII message studio" />
+  <meta
+    name="twitter:description"
+    content="Private notes paired with eight emotional 80×24 ASCII short films and browser side AES 256 GCM encryption."
+  />
+  <meta name="theme-color" content="#F4510B" />
+  <link rel="stylesheet" href="./dist/styles.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Are my messages or photos saved on any server?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. Everything runs 100% locally in your browser. Neither your message, your secret key, nor any photo you attach is ever uploaded, logged, or stored on a server."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How safe is the encryption when I add a secret key?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Messages locked with a key are encrypted on your device using AES 256 GCM with PBKDF2 SHA 256 key derivation (120,000 iterations). Without the exact key, nobody can read the message, emotion, or photo."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What happens if I leave the secret key blank?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Leaving the key blank creates an open cipher code so your receiver can watch the animation right away without typing a passphrase. The data still lives only inside the code or link you share."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is my uploaded photo kept private?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. Your photo is sampled on a local HTML canvas inside your device memory and converted into ASCII text characters. The original image file never leaves your browser."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can the receiver access the encoder from my share link?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. Shared links open a dedicated receiver view containing only the decoder and the terminal experience, keeping the flow clean and focused on your message."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How do Time capsule and Burn after reading work?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Time capsule seals the unlock time inside the code until the target hour arrives. Burn after reading dissolves the message into ASCII ash after one view and blocks reopening on that browser."
+        }
+      }
+    ]
+  }
+  </script>
 </head>
-<body class="crt-enabled">
-  <a href="#mainContent" class="skip-link">Skip to content</a>
-  <canvas id="starfieldBg" class="starfield-bg" aria-hidden="true"></canvas>
-  <div class="ambient-bg" aria-hidden="true"></div>
-  <div class="grain-overlay" aria-hidden="true"></div>
-
-  <header class="topbar">
-    <div class="brand">
-      <div class="brand-lockup">
-        <span class="status-dot" aria-hidden="true"></span>
-        <span class="brand-badge">TTY//FEEL</span>
-      </div>
-      <span id="brandSubtitle" class="brand-sub">Encrypted messages, felt in ASCII cinema</span>
-    </div>
-
-    <nav id="modeTabs" class="mode-tabs" aria-label="Primary modes">
-      <button id="tabEncode" class="tab-btn active" type="button">Encode</button>
-      <button id="tabDecode" class="tab-btn" type="button">Decode</button>
-    </nav>
-
-    <div class="topbar-controls">
-      <button id="toggleTheme" class="icon-btn" type="button" title="Switch between Dark and Light studio theme">
-        <span id="themeLabel">Theme: Dark</span>
-      </button>
-      <button id="toggleSound" class="icon-btn" type="button" title="Toggle ambient synth audio">
-        <svg id="soundIcon" class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l12-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm12-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>
-        <span id="soundLabel">Sound: ON</span>
-      </button>
-      <button id="toggleCrt" class="icon-btn" type="button" title="Toggle CRT scanline effect">
-        CRT: ON
-      </button>
-    </div>
-  </header>
-
-  <main id="mainContent" class="container">
-    <!-- ==================== ENCODE VIEW ==================== -->
-    <section id="encodeView" class="panel">
-      <div class="hero-strip">
-        <div>
-          <div class="eyebrow">Cipher studio · 8 terminal films</div>
-          <h1>Craft a secret emotional message</h1>
-          <p class="subtitle">
-            Seal your words inside a compact cipher code with an optional secret key. When unlocked, the receiver watches a terminal story shaped by the emotion before reading your note.
-          </p>
-        </div>
-        <div class="hero-badge-card">
-          <span class="hero-badge-title">Key optional</span>
-          <span class="hero-badge-sub">Open cipher or AES 256 lock</span>
-        </div>
-      </div>
-
-      <div class="encode-grid">
-        <!-- Left column: Emotion cards + Live ASCII Mini Cinema -->
-        <div class="left-studio">
-          <div class="field-group">
-            <div class="label-row">
-              <label><span class="step-num">01</span> Choose the emotion</label>
-              <span id="selectedEmotionPill" class="mini-emotion-pill">♥ Love</span>
-            </div>
-            <div id="emotionGrid" class="emotion-grid" role="radiogroup" aria-label="Select emotion"></div>
-          </div>
-
-          <div class="mini-preview-card">
-            <div class="mini-preview-bar">
-              <div class="mini-preview-title">
-                <span class="live-dot" aria-hidden="true"></span>
-                <span>Live stage</span>
-                <span id="miniPreviewAct" class="mono-muted">ACT I</span>
-              </div>
-              <button id="previewEmotionBtn" class="mini-action-btn" type="button">Watch full film</button>
-            </div>
-            <div class="mini-stage-wrap">
-              <pre id="livePreviewScreen" class="ascii-screen mini-ascii-screen" aria-label="Live preview of selected emotion"></pre>
-            </div>
-          </div>
-        </div>
-
-        <!-- Right column: Message composer & encrypted code -->
-        <div class="field-column compose-card">
-          <div class="field-group">
-            <div class="label-row">
-              <label for="messageInput"><span class="step-num">02</span> Write your secret message</label>
-              <span id="charCount" class="mono-muted">0 chars</span>
-            </div>
-            <textarea
-              id="messageInput"
-              rows="6"
-              placeholder="Write something they will feel before they finish reading..."
-            ></textarea>
-          </div>
-
-          <div class="two-col">
-            <div class="field-group">
-              <label for="senderInput">From <span class="optional-tag">(optional)</span></label>
-              <input id="senderInput" type="text" maxlength="40" placeholder="e.g. Alex" />
-            </div>
-
-            <div class="field-group">
-              <div class="label-row">
-                <label for="encodeKeyInput"><span class="step-num">03</span> Secret key <span class="optional-tag">(optional)</span></label>
-                <button id="genKeyBtn" class="link-btn" type="button">Generate key</button>
-              </div>
-              <div class="input-with-btn">
-                <input id="encodeKeyInput" type="password" placeholder="Leave blank for open code" />
-                <button class="peek-btn" data-peek="encodeKeyInput" type="button" title="Show or hide key">Show</button>
-              </div>
-            </div>
-          </div>
-
-          <p class="helper-note">
-            Leave the key blank for an open code anyone with your share link can watch, or add a passphrase for AES 256 encryption.
-          </p>
-
-          <div class="special-modes-box">
-            <div class="special-mode-row">
-              <div class="field-group">
-                <div class="label-row">
-                  <label for="unlockAtInput">
-                    <svg class="ui-icon inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14M5 20h14M7 4v4l5 4-5 4v4M17 4v4l-5 4 5 4v4"/></svg>
-                    Time capsule <span class="optional-tag">(optional)</span>
-                  </label>
-                  <div class="preset-chips">
-                    <button type="button" class="chip-btn" data-unlock-preset="clear">None</button>
-                    <button type="button" class="chip-btn" data-unlock-preset="15s">+15s</button>
-                    <button type="button" class="chip-btn" data-unlock-preset="midnight">Midnight</button>
-                  </div>
-                </div>
-                <input id="unlockAtInput" type="datetime-local" />
-                <span id="unlockPresetNote" class="mono-muted"></span>
-              </div>
-
-              <label class="burn-toggle-card" for="burnToggle">
-                <input id="burnToggle" type="checkbox" />
-                <div>
-                  <div class="burn-title">
-                    <svg class="ui-icon inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c.5 3.5 4 5.5 4 9.5a4 4 0 1 1-8 0c0-2 1-4 2.5-5.5C10.5 9 12 9 12 6.5V3Z"/></svg>
-                    Burn after reading
-                  </div>
-                  <div class="burn-sub">Dissolves into ASCII ash after one view</div>
-                </div>
-              </label>
-            </div>
-          </div>
-
-          <div class="photo-attach-box">
-            <div class="label-row">
-              <label>
-                <svg class="ui-icon inline" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="m21 15-5-5L5 19"/></svg>
-                Attach photo memory <span class="optional-tag">(optional)</span>
-              </label>
-              <div class="photo-btn-group">
-                <input id="photoFileInput" type="file" accept="image/*" class="hidden" />
-                <button id="choosePhotoBtn" class="mini-action-btn" type="button">Choose photo</button>
-                <button id="removePhotoBtn" class="link-btn hidden" type="button">Remove</button>
-              </div>
-            </div>
-
-            <div id="photoEditorBox" class="photo-editor-box hidden">
-              <div class="photo-preview-wrap">
-                <pre id="photoPreviewScreen" class="ascii-screen photo-preview-screen" aria-label="ASCII photo preview"></pre>
-              </div>
-              <div class="photo-controls">
-                <label class="photo-ctrl">
-                  <span>Style</span>
-                  <select id="photoStyleSelect">
-                    <option value="emotion">Emotion glow</option>
-                    <option value="color">Color phosphor</option>
-                  </select>
-                </label>
-                <label class="photo-ctrl">
-                  <span>Contrast</span>
-                  <input id="photoContrastInput" type="range" min="0.8" max="3.5" step="0.05" value="1.55" />
-                </label>
-                <label class="photo-ctrl-check">
-                  <input id="photoFullCheck" type="checkbox" />
-                  <span>Full image</span>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <div class="action-row">
-            <button id="encryptBtn" class="primary-btn" type="button">
-              Create secret code
-            </button>
-            <span id="encodeError" class="error-text" role="alert"></span>
-          </div>
-
-          <div id="encodedOutputBox" class="output-box hidden">
-            <div class="output-header">
-              <span id="outputModeBadge" class="mono-accent">Payload ready</span>
-              <span id="payloadStats" class="mono-muted"></span>
-            </div>
-            <pre id="encodedToken" class="token-display"></pre>
-            <div class="output-actions">
-              <button id="copyCodeBtn" class="secondary-btn" type="button">Copy code</button>
-              <button id="copyLinkBtn" class="secondary-btn" type="button">Copy share link</button>
-              <button id="testDecodeBtn" class="ghost-btn" type="button">Unlock in decoder →</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <section class="faq-section" aria-labelledby="faqHeading">
-        <div class="faq-header">
-          <div class="eyebrow">100% private · zero servers</div>
-          <h2 id="faqHeading">Privacy and safety</h2>
-          <p class="faq-subtitle">
-            Everything happens inside your browser. Your messages, secret keys, and photos never touch a database.
-          </p>
-        </div>
-
-        <div class="faq-grid">
-          <article class="faq-item">
-            <h3>Are my messages or photos saved on any server?</h3>
-            <p>
-              No. Everything runs 100% locally in your browser. Neither your message, your secret key, nor any photo you attach is ever uploaded, logged, or stored on a server.
-            </p>
-          </article>
-
-          <article class="faq-item">
-            <h3>How safe is the encryption when I add a secret key?</h3>
-            <p>
-              Messages locked with a key are encrypted on your device using AES 256 GCM with PBKDF2 SHA 256 key derivation (120,000 iterations). Without the exact key, nobody can read the message, emotion, or photo.
-            </p>
-          </article>
-
-          <article class="faq-item">
-            <h3>What happens if I leave the secret key blank?</h3>
-            <p>
-              Leaving the key blank creates an open cipher code so your receiver can watch the animation right away without typing a passphrase. The data still lives only inside the code or link you share.
-            </p>
-          </article>
-
-          <article class="faq-item">
-            <h3>Is my uploaded photo kept private?</h3>
-            <p>
-              Yes. Your photo is sampled on a local HTML canvas inside your device memory and converted into ASCII text characters. The original image file never leaves your browser.
-            </p>
-          </article>
-
-          <article class="faq-item">
-            <h3>Can the receiver access the encoder from my share link?</h3>
-            <p>
-              No. Shared links open a dedicated receiver view containing only the decoder and the terminal experience, keeping the flow clean and focused on your message.
-            </p>
-          </article>
-
-          <article class="faq-item">
-            <h3>How do Time capsule and Burn after reading work?</h3>
-            <p>
-              Time capsule seals the unlock time inside the code until the target hour arrives. Burn after reading dissolves the message into ASCII ash after one view and blocks reopening on that browser.
-            </p>
-          </article>
-        </div>
-      </section>
-    </section>
-
-    <!-- ==================== DECODE VIEW ==================== -->
-    <section id="decodeView" class="panel hidden">
-      <div class="hero-strip">
-        <div>
-          <div class="eyebrow">Decryption vault</div>
-          <h1>Unlock a secret terminal story</h1>
-          <p class="subtitle">
-            Paste the code you received. Open codes unlock immediately; protected codes require the sender's secret passphrase.
-          </p>
-        </div>
-        <div class="hero-badge-card">
-          <span class="hero-badge-title">24 fps terminal</span>
-          <span class="hero-badge-sub">Multi act ASCII cinema</span>
-        </div>
-      </div>
-
-      <div id="decodeLayout" class="decode-layout">
-        <div class="decode-card">
-          <div id="decodeCodeGroup" class="field-group">
-            <div class="label-row">
-              <label for="decodeCodeInput"><span class="step-num">01</span> Paste secret code</label>
-              <span id="decodeCodeStatus" class="mono-muted">Waiting for code...</span>
-            </div>
-            <textarea
-              id="decodeCodeInput"
-              rows="4"
-              class="mono-input"
-              placeholder="TTY0.... or TTY1...."
-            ></textarea>
-          </div>
-
-          <div id="receiverLoadedBanner" class="receiver-banner hidden">
-            <div class="receiver-banner-top">
-              <span class="mono-accent">Secret message received</span>
-              <button id="toggleRawCodeBtn" class="link-btn" type="button">View code</button>
-            </div>
-            <p id="receiverBannerText" class="receiver-banner-sub">
-              An encrypted emotional terminal film is waiting for you.
-            </p>
-          </div>
-
-          <div id="decodeKeyGroup" class="field-group">
-            <label for="decodeKeyInput"><span class="step-num">02</span> Secret key <span class="optional-tag">(only if locked)</span></label>
-            <div class="input-with-btn">
-              <input id="decodeKeyInput" type="password" placeholder="Optional for open codes" />
-              <button class="peek-btn" data-peek="decodeKeyInput" type="button" title="Show or hide key">Show</button>
-            </div>
-          </div>
-
-          <div class="action-row">
-            <button id="decryptBtn" class="primary-btn" type="button">
-              Unlock and play experience
-            </button>
-            <span id="decodeError" class="error-text" role="alert"></span>
-          </div>
-        </div>
-
-        <div id="samplesVault" class="samples-vault">
-          <div class="samples-header">
-            <span class="mono-accent">Instant experience vault</span>
-            <span class="mono-muted">Click any emotion to preview a full ASCII short film</span>
-          </div>
-          <div id="sampleButtons" class="sample-grid"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ==================== THEATER STAGE ==================== -->
-    <section id="theaterView" class="theater-panel hidden" aria-live="polite">
-      <div class="terminal-window">
-        <div class="terminal-chrome">
-          <div class="chrome-dots" aria-hidden="true">
-            <span class="dot red"></span>
-            <span class="dot yellow"></span>
-            <span class="dot green"></span>
-          </div>
-          <div class="chrome-title">
-            <span id="theaterEmotionBadge" class="emotion-pill">LOVE</span>
-            <span id="theaterActLabel" class="act-label">ACT I</span>
-          </div>
-          <div class="chrome-actions">
-            <span id="theaterTimer" class="mono-muted">00:00 / 00:17</span>
-            <button id="skipAnimBtn" class="mini-btn" type="button">Skip to message</button>
-            <button id="replayAnimBtn" class="mini-btn" type="button">Replay</button>
-            <button id="closeTheaterBtn" class="mini-btn" type="button">Close</button>
-          </div>
-        </div>
-
-        <div id="terminalStage" class="terminal-stage">
-          <pre id="asciiScreen" class="ascii-screen" aria-label="ASCII terminal animation"></pre>
-
-          <div id="revealOverlay" class="reveal-overlay hidden">
-            <div class="reveal-card">
-              <div class="reveal-meta">
-                <span id="revealEmotionTag" class="reveal-tag">♥ LOVE</span>
-                <span id="revealModeBadge" class="reveal-burn-badge hidden">Burns after reading</span>
-                <span id="revealSenderTag" class="reveal-sender"></span>
-              </div>
-              <p id="revealMessageText" class="reveal-message"></p>
-              <div class="reveal-footer">
-                <button id="burnNowBtn" class="burn-btn hidden" type="button">Burn and dissolve</button>
-                <button id="revealReplayBtn" class="secondary-btn" type="button">Replay story</button>
-                <button id="replyBtn" class="primary-btn" type="button">Send a secret reply</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="progress-track">
-          <div id="theaterProgress" class="progress-fill"></div>
-        </div>
-      </div>
-    </section>
-  </main>
-
+<body>
+  <div id="root"></div>
   <script defer src="./dist/app.bundle.js"></script>
 </body>
 </html>

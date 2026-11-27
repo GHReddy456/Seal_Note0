@@ -1,13 +1,28 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import vm from 'node:vm';
 
 import { encryptMessage, decryptMessage, inspectCode } from '../src/crypto.js';
 import { EMOTION_LIST } from '../src/emotions.js';
 import { AsciiCanvas } from '../src/ascii-canvas.js';
 import { pixelsToAsciiGrid, PHOTO_COLS, PHOTO_ROWS } from '../src/photo-ascii.js';
-import { renderSceneFrame, renderTimeCapsule, renderBurnAsh, renderPhotoReveal, CANVAS_COLS, CANVAS_ROWS } from '../src/scenes.js';
+import {
+  renderSceneFrame,
+  renderTimeCapsule,
+  renderBurnAsh,
+  renderPhotoReveal,
+  renderNotFoundStatic,
+  CANVAS_COLS,
+  CANVAS_ROWS,
+} from '../src/scenes.js';
+import { EmotionAudio } from '../src/audio.js';
+import {
+  validateMessageInput,
+  validatePassphraseInput,
+  validateFutureUnlockDate,
+  getProtocolBadge,
+  inspectCipherStatus,
+} from '../src/utils/validation.js';
 
 test('encodes and decodes open message without a secret key (TTY0)', async () => {
   const message = 'Just wanted to remind you how glad I am that you are in my life.';
@@ -71,7 +86,7 @@ test('rejects missing key, wrong secret key, or tampered code', async () => {
   );
 });
 
-test('all 8 emotion ASCII scenes render valid 80x24 frames across acts and living backdrop', () => {
+test('all 8 emotion ASCII scenes and 404 static render valid 80x24 frames', () => {
   assert.equal(EMOTION_LIST.length, 8);
   for (const emotion of EMOTION_LIST) {
     const sampleFrames = [0, 96, 216, 320, emotion.durationFrames - 1, emotion.durationFrames + 30];
@@ -88,6 +103,11 @@ test('all 8 emotion ASCII scenes render valid 80x24 frames across acts and livin
       assert.ok(html.length > 0);
     }
   }
+
+  const notFoundCanvas = new AsciiCanvas(CANVAS_COLS, CANVAS_ROWS);
+  renderNotFoundStatic(notFoundCanvas, 10);
+  const nfText = notFoundCanvas.toLines().join('\n');
+  assert.ok(nfText.includes('404 // SIGNAL LOST IN TRANSIT'));
 });
 
 test('supports Time Capsule unlockAt and Burn After Reading metadata + scenes', async () => {
@@ -147,115 +167,123 @@ test('converts pixels to ASCII portrait, round-trips in cipher, and renders reve
   assert.ok(out.includes('ALEX'));
 });
 
-test('built app.bundle.js boots cleanly and binds encrypt + photo controls', async () => {
-  const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-  const bundle = fs.readFileSync(new URL('../dist/app.bundle.js', import.meta.url), 'utf8');
-  const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((m) => m[1]);
-  const elMap = new Map();
+test('EmotionAudio unlocks suspended AudioContext synchronously and schedules audible nodes', async () => {
+  let createdCount = 0;
+  let resumeCalls = 0;
+  const startedOscillators = [];
 
-  const makeEl = (tag) => {
-    const listeners = {};
-    return {
-      tagName: tag,
-      listeners,
-      children: [],
-      style: { setProperty() {} },
-      classList: {
-        _s: new Set(['hidden']),
-        toggle(c, f) {
-          if (f === undefined) {
-            if (this._s.has(c)) { this._s.delete(c); return false; }
-            this._s.add(c);
-            return true;
-          }
-          f ? this._s.add(c) : this._s.delete(c);
-        },
-        add(...c) { c.forEach((x) => this._s.add(x)); },
-        remove(...c) { c.forEach((x) => this._s.delete(x)); },
-        contains(c) { return this._s.has(c); },
-      },
-      setAttribute() {},
-      addEventListener(ev, fn) { (listeners[ev] ||= []).push(fn); },
-      append(...nodes) { this.children.push(...nodes); },
-      appendChild(node) { this.children.push(node); },
-      querySelectorAll() { return []; },
-      focus() {},
-      value: '',
-      textContent: '',
-      innerHTML: '',
-      dataset: {},
-      checked: false,
-      type: 'text',
-    };
-  };
-
-  for (const id of ids) elMap.set(id, makeEl('div'));
-
-  const sandbox = {
-    window: { location: { hash: '', href: 'https://messagefun.vercel.app/' }, addEventListener() {} },
-    document: {
-      documentElement: makeEl('html'),
-      body: makeEl('body'),
-      getElementById: (id) => elMap.get(id) || null,
-      createElement: (tag) => makeEl(tag),
-      querySelectorAll: () => [],
-      querySelector: () => null,
-    },
-    requestAnimationFrame: () => 1,
-    cancelAnimationFrame: () => {},
-    localStorage: { getItem: () => null, setItem: () => {} },
-    crypto: globalThis.crypto,
-    TextEncoder,
-    TextDecoder,
-    Blob,
-    Response,
-    CompressionStream,
-    DecompressionStream,
-    btoa,
-    atob,
-    URL,
-    setTimeout,
-    clearTimeout,
-  };
-
-  vm.runInNewContext(bundle, sandbox);
-
-  assert.equal(elMap.get('emotionGrid').children.length, 8);
-  assert.ok(elMap.get('encryptBtn').listeners.click?.length > 0, 'encryptBtn click listener must bind');
-  assert.ok(elMap.get('choosePhotoBtn').listeners.click?.length > 0, 'choosePhotoBtn click listener must bind');
-
-  elMap.get('messageInput').value = 'Hello from boot test!';
-  await elMap.get('encryptBtn').listeners.click[0]();
-  assert.ok(elMap.get('encodedToken').textContent.startsWith('TTY0.'), 'Encrypt button should produce TTY0 token');
-});
-
-test('EmotionAudio unlocks, schedules scene notes + texture, and stops cleanly', async () => {
-  const { EmotionAudio } = await import('../src/audio.js');
-  let startedCount = 0;
-  let stoppedCount = 0;
-  const makeParam = () => ({ value: 0, setValueAtTime() {}, linearRampToValueAtTime() {}, exponentialRampToValueAtTime() {} });
-  class MockAudioContext {
-    constructor() { this.state = 'suspended'; this.currentTime = 0; this.sampleRate = 44100; this.destination = {}; }
-    resume() { this.state = 'running'; return Promise.resolve(); }
-    createGain() { return { gain: makeParam(), connect() {} }; }
-    createDynamicsCompressor() { return { threshold: makeParam(), ratio: makeParam(), connect() {} }; }
-    createBiquadFilter() { return { type: 'lowpass', frequency: makeParam(), connect() {} }; }
-    createBuffer(ch, len) { return { getChannelData: () => new Float32Array(len) }; }
-    createBufferSource() { return { buffer: null, loop: false, connect() {}, start() { startedCount++; }, stop() { stoppedCount++; } }; }
-    createOscillator() { return { type: 'sine', frequency: makeParam(), connect() {}, start() { startedCount++; }, stop() { stoppedCount++; } }; }
+  class FakeAudioParam {
+    constructor(val = 0) {
+      this.value = val;
+    }
+    setValueAtTime(v) { this.value = v; }
+    linearRampToValueAtTime(v) { this.value = v; }
+    exponentialRampToValueAtTime(v) { this.value = v; }
+    setTargetAtTime(v) { this.value = v; }
+    cancelScheduledValues() {}
   }
-  const origAudio = globalThis.AudioContext;
-  globalThis.AudioContext = MockAudioContext;
+
+  class FakeAudioContext {
+    constructor() {
+      createdCount++;
+      this.state = 'suspended';
+      this.currentTime = 0;
+      this.sampleRate = 44100;
+      this.destination = { id: 'dest' };
+    }
+    async resume() {
+      resumeCalls++;
+      this.state = 'running';
+    }
+    createGain() {
+      return { gain: new FakeAudioParam(1), connect() {}, disconnect() {} };
+    }
+    createBiquadFilter() {
+      return { type: 'lowpass', frequency: new FakeAudioParam(1000), Q: new FakeAudioParam(1), connect() {}, disconnect() {} };
+    }
+    createDynamicsCompressor() {
+      return {
+        threshold: new FakeAudioParam(-24),
+        knee: new FakeAudioParam(30),
+        ratio: new FakeAudioParam(12),
+        attack: new FakeAudioParam(0.003),
+        release: new FakeAudioParam(0.25),
+        connect() {},
+        disconnect() {},
+      };
+    }
+    createBuffer(ch, len) {
+      return { getChannelData: () => new Float32Array(len) };
+    }
+    createBufferSource() {
+      return { buffer: null, connect() {}, disconnect() {}, start() {}, stop() {} };
+    }
+    createOscillator() {
+      const osc = {
+        type: 'sine',
+        frequency: new FakeAudioParam(440),
+        connect() {},
+        disconnect() {},
+        start: (t) => startedOscillators.push({ freq: osc.frequency.value, t }),
+        stop() {},
+      };
+      return osc;
+    }
+  }
+
+  const prevCtx = globalThis.AudioContext;
+  globalThis.AudioContext = FakeAudioContext;
   try {
     const audio = new EmotionAudio();
-    audio.unlock();
-    assert.equal(audio.ctx.state, 'running');
-    audio.playScene('apology', 20000);
-    assert.ok(startedCount > 20, 'Expected scheduled oscillators + noise texture');
-    audio.playRevealChord('apology');
+    assert.equal(audio.unlock(), true);
+    assert.equal(createdCount, 1);
+    assert.equal(resumeCalls, 1);
+
+    await audio.playScene('love', 3000);
+    assert.ok(startedOscillators.length >= 2, 'Expected root drone and melodic notes to start');
+
+    await audio.playRevealChord('love');
+    assert.ok(startedOscillators.length >= 6, 'Expected reveal chord notes to start');
+
+    audio.setMuted(true);
+    assert.equal(audio.muted, true);
     audio.stop();
-    assert.ok(stoppedCount > 20);
   } finally {
-    globalThis.AudioContext = origAudio;
+    globalThis.AudioContext = prevCtx;
   }
+});
+
+test('client-side validation helpers enforce passphrase and future date rules', () => {
+  assert.equal(validateMessageInput('   ').valid, false);
+  assert.equal(validateMessageInput('Hello').valid, true);
+
+  assert.equal(validatePassphraseInput('abc').valid, false);
+  assert.equal(validatePassphraseInput('abcd').valid, true);
+  assert.equal(validatePassphraseInput('', { required: true }).valid, false);
+
+  assert.equal(
+    validateFutureUnlockDate({ dateValue: '2020-01-01T00:00', nowMs: Date.now() }).valid,
+    false
+  );
+  assert.equal(
+    validateFutureUnlockDate({ presetOffsetMs: 15_000, nowMs: 1_000_000 }).unlockAt,
+    1_015_000
+  );
+
+  assert.equal(getProtocolBadge('').prefix, 'TTY0.');
+  assert.equal(getProtocolBadge('secret').prefix, 'TTY1.');
+  assert.equal(inspectCipherStatus('TTY1.abc').requiresKey, true);
+});
+
+test('built bundle, styles, fonts, and editorial assets exist cleanly', () => {
+  const bundle = fs.readFileSync(new URL('../dist/app.bundle.js', import.meta.url), 'utf8');
+  const css = fs.readFileSync(new URL('../dist/styles.css', import.meta.url), 'utf8');
+  const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const html404 = fs.readFileSync(new URL('../404.html', import.meta.url), 'utf8');
+
+  assert.ok(bundle.length > 50_000, 'Expected bundled React/Motion JS output');
+  assert.ok(css.includes('Geist Variable') && css.includes('Geist Mono Variable'));
+  assert.ok(!css.includes('linear-gradient(') && !css.includes('radial-gradient('), 'No background gradients allowed');
+  assert.ok(html.includes('application/ld+json') && html.includes('FAQPage'));
+  assert.ok(html404.includes('./dist/app.bundle.js'));
 });

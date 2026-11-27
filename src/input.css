@@ -1,0 +1,134 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Geist Variable", "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+@layer base {
+  html {
+    background-color: #F4510B;
+    color: #080808;
+    font-family: var(--font-sans);
+    font-style: normal;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: auto;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    background-color: #F4510B;
+    background-image: url("./orange-wood-tiles.svg");
+    background-repeat: repeat;
+    background-size: 480px 600px;
+    color: #080808;
+    font-family: var(--font-sans);
+    font-style: normal;
+    overflow-x: clip;
+  }
+
+  em, i {
+    font-style: normal;
+  }
+}
+
+.wood-tile-canvas {
+  background-color: #F4510B;
+  background-image: url("./orange-wood-tiles.svg");
+  background-repeat: repeat;
+  background-size: 480px 600px;
+}
+
+.terminal-viewport {
+  position: relative;
+  container-type: inline-size;
+  background-color: #080808;
+  overflow: hidden;
+}
+
+.terminal-viewport.crt-on::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='4'%3E%3Crect y='2' width='2' height='2' fill='%23000000' fill-opacity='0.24'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  z-index: 2;
+}
+
+.ascii-stage-grid {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: clamp(5.2px, 1.92cqw, 14.5px);
+  line-height: 1.25;
+  letter-spacing: 0;
+  white-space: pre;
+  overflow: hidden;
+  color: #FFF9F7;
+  user-select: none;
+  transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1), filter 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ascii-stage-grid.dimmed {
+  opacity: 0.22;
+  filter: blur(1px);
+}
+
+.ascii-mini-grid {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: clamp(4.8px, 1.88cqw, 11.5px);
+  line-height: 1.2;
+  letter-spacing: 0;
+  white-space: pre;
+  overflow: hidden;
+  color: #FFF9F7;
+  user-select: none;
+}
+
+.ascii-photo-grid {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: clamp(4.6px, 2.02cqw, 9.5px);
+  line-height: 1.15;
+  letter-spacing: 0;
+  white-space: pre;
+  overflow: hidden;
+  color: #FFF9F7;
+  user-select: none;
+}
+
+/* Authentic phosphor ink palette strictly inside #080808 Midnight Black terminal screens */
+.c-dim { color: #54504E; }
+.c-muted { color: #968D8A; }
+.c-star { color: #DDD4D0; }
+.c-white { color: #FFF9F7; }
+.c-bright { color: #FFFFFF; text-shadow: 0 0 6px rgba(255, 249, 247, 0.45); }
+.c-green { color: #52C48A; text-shadow: 0 0 6px rgba(82, 196, 138, 0.38); }
+.c-rose { color: #FF759F; text-shadow: 0 0 6px rgba(255, 117, 159, 0.38); }
+.c-gold { color: #F6C85C; text-shadow: 0 0 6px rgba(246, 200, 92, 0.35); }
+.c-cyan { color: #67D4E8; text-shadow: 0 0 6px rgba(103, 212, 232, 0.35); }
+.c-blue { color: #7EB3FA; text-shadow: 0 0 6px rgba(126, 179, 250, 0.35); }
+.c-violet { color: #C58DFC; text-shadow: 0 0 6px rgba(197, 141, 252, 0.35); }
+.c-orange { color: #F4510B; text-shadow: 0 0 6px rgba(244, 81, 11, 0.42); }
+
+@keyframes terminalCursorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.reveal-cursor::after {
+  content: "▋";
+  color: #F4510B;
+  margin-left: 3px;
+  animation: terminalCursorBlink 0.9s steps(2) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-cursor::after {
+    animation: none;
+  }
+}

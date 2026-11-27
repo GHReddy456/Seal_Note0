@@ -1,6 +1,6 @@
-# express_message
+# Seal Note
 
-**TTY//FEEL** — Encrypted secret messages revealed through emotional ASCII terminal animations.
+**Seal Note** — Encrypted secret messages revealed through emotional ASCII terminal animations.
 
 ## Features
 - **8 Emotional ASCII Terminal Films**: Love, Happiness, Sadness, Missing Someone, Friendship, Motivation, Gratitude, and I'm Sorry — rendered purely with moving text characters on an `80×24` grid.

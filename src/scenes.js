@@ -1239,3 +1239,43 @@ export function renderPhotoReveal(canvas, frame, photo, { sender = '' } = {}) {
   canvas.text(Math.max(1, Math.floor((canvas.cols - label.length) / 2)), 23, label, 'bright');
   return canvas;
 }
+
+/**
+ * Renders the 404 signal lost terminal animation on an 80x24 grid.
+ */
+export function renderNotFoundStatic(canvas, frame) {
+  canvas.clear();
+  const glyphs = ['.', ':', '·', '~', ' '];
+  for (let y = 0; y < canvas.rows; y++) {
+    for (let x = 0; x < canvas.cols; x++) {
+      const n = hash01(x * 19 + y * 53 + Math.floor(frame / 2) * 7);
+      if (n > 0.91) {
+        const ch = glyphs[Math.floor(n * 30) % glyphs.length];
+        if (ch !== ' ') canvas.set(x, y, ch, n > 0.97 ? 'muted' : 'dim');
+      }
+    }
+  }
+
+  const boxW = 54;
+  const boxH = 9;
+  const bx = Math.floor((canvas.cols - boxW) / 2);
+  const by = Math.floor((canvas.rows - boxH) / 2);
+
+  canvas.fillRect(bx, by, boxW, boxH, ' ', '');
+  canvas.text(bx, by, '+' + '-'.repeat(boxW - 2) + '+', 'orange');
+  for (let r = 1; r < boxH - 1; r++) {
+    canvas.set(bx, by + r, '|', 'orange');
+    canvas.set(bx + boxW - 1, by + r, '|', 'orange');
+  }
+  canvas.text(bx, by + boxH - 1, '+' + '-'.repeat(boxW - 2) + '+', 'orange');
+
+  const blink = Math.floor(frame / 12) % 2 === 0 ? '_' : ' ';
+  const title = '404 // SIGNAL LOST IN TRANSIT';
+  const sub1 = 'No sealed letter or route exists at this path.';
+  const sub2 = `Awaiting return to studio${blink}`;
+
+  canvas.text(Math.floor((canvas.cols - title.length) / 2), by + 2, title, 'bright');
+  canvas.text(Math.floor((canvas.cols - sub1.length) / 2), by + 4, sub1, 'white');
+  canvas.text(Math.floor((canvas.cols - sub2.length) / 2), by + 6, sub2, 'orange');
+  return canvas;
+}

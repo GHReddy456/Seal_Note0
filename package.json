@@ -1,5 +1,5 @@
 {
-  "name": "tty-feel",
+  "name": "seal-note",
   "version": "1.0.0",
   "description": "Encrypted secret messages revealed through emotional ASCII terminal animations.",
   "type": "module",
@@ -8,5 +8,18 @@
     "dev": "node scripts/build-bundle.mjs && node server.mjs",
     "start": "node scripts/build-bundle.mjs && node server.mjs",
     "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@phosphor-icons/react": "^2.1.10",
+    "motion": "^14.14.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@fontsource-variable/geist": "^5.3.0",
+    "@fontsource-variable/geist-mono": "^5.3.0",
+    "@tailwindcss/cli": "^4.3.5",
+    "esbuild": "^0.28.2",
+    "tailwindcss": "^4.3.5"
   }
 }

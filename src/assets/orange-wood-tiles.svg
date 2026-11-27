@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="600" viewBox="0 0 480 600">
+  <defs>
+    <pattern id="grain" width="480" height="600" patternUnits="userSpaceOnUse">
+      <!-- 4 vertical wood plank tiles -->
+      <rect x="0" y="0" width="120" height="600" fill="#E84B08" />
+      <rect x="120" y="0" width="120" height="600" fill="#F4510B" />
+      <rect x="240" y="0" width="120" height="600" fill="#E14607" />
+      <rect x="360" y="0" width="120" height="600" fill="#EE4D09" />
+
+      <!-- Subtle horizontal tile cuts (staggered board ends) -->
+      <rect x="0" y="210" width="120" height="2" fill="#9E2D02" fill-opacity="0.45" />
+      <rect x="0" y="212" width="120" height="1" fill="#FF793A" fill-opacity="0.22" />
+
+      <rect x="120" y="430" width="120" height="2" fill="#9E2D02" fill-opacity="0.45" />
+      <rect x="120" y="432" width="120" height="1" fill="#FF793A" fill-opacity="0.22" />
+
+      <rect x="240" y="130" width="120" height="2" fill="#9E2D02" fill-opacity="0.45" />
+      <rect x="240" y="132" width="120" height="1" fill="#FF793A" fill-opacity="0.22" />
+
+      <rect x="360" y="340" width="120" height="2" fill="#9E2D02" fill-opacity="0.45" />
+      <rect x="360" y="342" width="120" height="1" fill="#FF793A" fill-opacity="0.22" />
+
+      <!-- Organic vertical wood grain strokes -->
+      <g fill="none" stroke="#AD3203" stroke-opacity="0.18" stroke-width="1.3">
+        <path d="M18 0 C14 140, 24 280, 17 430 C13 510, 20 560, 18 600" />
+        <path d="M42 0 C48 160, 36 310, 45 450 C49 520, 40 570, 42 600" />
+        <path d="M74 0 C70 120, 82 240, 72 390 C68 490, 78 550, 74 600" />
+        <path d="M98 0 C102 180, 92 340, 100 480 C103 540, 96 575, 98 600" />
+
+        <path d="M142 0 C138 150, 148 290, 140 420 C137 500, 145 550, 142 600" />
+        <path d="M170 0 C176 130, 162 280, 173 430 C177 510, 168 560, 170 600" />
+        <path d="M198 0 C193 170, 204 330, 195 470 C192 535, 201 575, 198 600" />
+        <path d="M222 0 C226 145, 217 295, 224 445 C227 520, 219 565, 222 600" />
+
+        <path d="M262 0 C257 140, 268 300, 260 440 C257 515, 265 560, 262 600" />
+        <path d="M294 0 C301 165, 286 320, 297 470 C300 530, 290 570, 294 600" />
+        <path d="M326 0 C321 125, 333 275, 323 425 C319 505, 329 555, 326 600" />
+
+        <path d="M384 0 C380 155, 391 310, 382 460 C379 525, 387 570, 384 600" />
+        <path d="M416 0 C422 140, 410 280, 419 425 C423 505, 413 560, 416 600" />
+        <path d="M448 0 C443 175, 455 335, 446 485 C443 540, 451 575, 448 600" />
+      </g>
+
+      <!-- Subtle warm fiber highlights -->
+      <g fill="none" stroke="#FF8347" stroke-opacity="0.12" stroke-width="1">
+        <path d="M30 0 C33 170, 26 350, 31 600" />
+        <path d="M156 0 C152 190, 160 390, 156 600" />
+        <path d="M278 0 C282 160, 274 370, 278 600" />
+        <path d="M402 0 C398 180, 406 380, 402 600" />
+      </g>
+
+      <!-- Subtle natural wood knots -->
+      <g fill="none" stroke="#9E2D02" stroke-opacity="0.22" stroke-width="1.2">
+        <ellipse cx="64" cy="365" rx="6" ry="15" />
+        <ellipse cx="64" cy="365" rx="2.5" ry="7" />
+        <ellipse cx="308" cy="245" rx="5.5" ry="13" />
+        <ellipse cx="308" cy="245" rx="2" ry="6" />
+        <ellipse cx="186" cy="118" rx="4.5" ry="11" />
+        <ellipse cx="430" cy="495" rx="5" ry="14" />
+      </g>
+
+      <!-- Deep vertical plank seams & right-edge subtle bevel -->
+      <g>
+        <rect x="0" y="0" width="2.5" height="600" fill="#9E2D02" fill-opacity="0.55" />
+        <rect x="2.5" y="0" width="1" height="600" fill="#FF7D42" fill-opacity="0.25" />
+
+        <rect x="119" y="0" width="2.5" height="600" fill="#9E2D02" fill-opacity="0.55" />
+        <rect x="121.5" y="0" width="1" height="600" fill="#FF7D42" fill-opacity="0.25" />
+
+        <rect x="239" y="0" width="2.5" height="600" fill="#9E2D02" fill-opacity="0.55" />
+        <rect x="241.5" y="0" width="1" height="600" fill="#FF7D42" fill-opacity="0.25" />
+
+        <rect x="359" y="0" width="2.5" height="600" fill="#9E2D02" fill-opacity="0.55" />
+        <rect x="361.5" y="0" width="1" height="600" fill="#FF7D42" fill-opacity="0.25" />
+      </g>
+    </pattern>
+  </defs>
+  <rect width="480" height="600" fill="url(#grain)" />
+</svg>
