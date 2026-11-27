@@ -228,3 +228,34 @@ test('built app.bundle.js boots cleanly and binds encrypt + photo controls', asy
   await elMap.get('encryptBtn').listeners.click[0]();
   assert.ok(elMap.get('encodedToken').textContent.startsWith('TTY0.'), 'Encrypt button should produce TTY0 token');
 });
+
+test('EmotionAudio unlocks, schedules scene notes + texture, and stops cleanly', async () => {
+  const { EmotionAudio } = await import('../src/audio.js');
+  let startedCount = 0;
+  let stoppedCount = 0;
+  const makeParam = () => ({ value: 0, setValueAtTime() {}, linearRampToValueAtTime() {}, exponentialRampToValueAtTime() {} });
+  class MockAudioContext {
+    constructor() { this.state = 'suspended'; this.currentTime = 0; this.sampleRate = 44100; this.destination = {}; }
+    resume() { this.state = 'running'; return Promise.resolve(); }
+    createGain() { return { gain: makeParam(), connect() {} }; }
+    createDynamicsCompressor() { return { threshold: makeParam(), ratio: makeParam(), connect() {} }; }
+    createBiquadFilter() { return { type: 'lowpass', frequency: makeParam(), connect() {} }; }
+    createBuffer(ch, len) { return { getChannelData: () => new Float32Array(len) }; }
+    createBufferSource() { return { buffer: null, loop: false, connect() {}, start() { startedCount++; }, stop() { stoppedCount++; } }; }
+    createOscillator() { return { type: 'sine', frequency: makeParam(), connect() {}, start() { startedCount++; }, stop() { stoppedCount++; } }; }
+  }
+  const origAudio = globalThis.AudioContext;
+  globalThis.AudioContext = MockAudioContext;
+  try {
+    const audio = new EmotionAudio();
+    audio.unlock();
+    assert.equal(audio.ctx.state, 'running');
+    audio.playScene('apology', 20000);
+    assert.ok(startedCount > 20, 'Expected scheduled oscillators + noise texture');
+    audio.playRevealChord('apology');
+    audio.stop();
+    assert.ok(stoppedCount > 20);
+  } finally {
+    globalThis.AudioContext = origAudio;
+  }
+});

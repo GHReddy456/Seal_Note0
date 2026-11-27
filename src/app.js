@@ -339,6 +339,7 @@ function renderSampleButtons() {
 
     btn.append(top, hint);
     btn.addEventListener('click', async () => {
+      audio.unlock();
       const code = await encryptMessage({
         message: sample.message,
         emotion: emo.id,
@@ -439,6 +440,7 @@ async function handleEncrypt() {
 }
 
 async function handleDecryptAndPlay() {
+  audio.unlock();
   el.decodeError.textContent = '';
   try {
     const payload = await decryptMessage({
@@ -876,6 +878,7 @@ function wireEvents() {
   el.decryptBtn.addEventListener('click', handleDecryptAndPlay);
 
   el.previewEmotionBtn.addEventListener('click', () => {
+    audio.unlock();
     const emo = EMOTIONS[state.selectedEmotion];
     startTheater({
       emotion: emo.id,
@@ -919,6 +922,7 @@ function wireEvents() {
     state.soundOn = !state.soundOn;
     audio.setMuted(!state.soundOn);
     el.soundLabel.textContent = `Sound: ${state.soundOn ? 'ON' : 'OFF'}`;
+    if (state.soundOn) audio.playChime();
   });
 
   el.toggleCrt.addEventListener('click', () => {
@@ -934,9 +938,11 @@ function wireEvents() {
 
   el.skipAnimBtn.addEventListener('click', triggerMessageReveal);
   el.replayAnimBtn.addEventListener('click', () => {
+    audio.unlock();
     if (state.currentExperience) startTheater(state.currentExperience);
   });
   el.revealReplayBtn.addEventListener('click', () => {
+    audio.unlock();
     if (state.currentExperience) startTheater(state.currentExperience);
   });
   el.closeTheaterBtn.addEventListener('click', closeTheater);
