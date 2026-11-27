@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Seal Note · Encrypted ASCII message studio</title>
+  <meta
+    name="description"
+    content="Write a private note, choose an emotional 80×24 ASCII short film, and seal it in a browser encrypted link with zero server storage."
+  />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Seal Note" />
+  <meta property="og:url" content="https://messagefun.vercel.app/" />
+  <meta property="og:title" content="Seal Note · Send encrypted messages that feel alive" />
+  <meta
+    property="og:description"
+    content="Write a private note, choose an emotional 80×24 ASCII short film, and seal it in a link that decrypts inside your browser."
+  />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Seal Note · Encrypted ASCII message studio" />
+  <meta
+    name="twitter:description"
+    content="Private notes paired with eight emotional 80×24 ASCII short films and browser side AES 256 GCM encryption."
+  />
+  <meta name="theme-color" content="#F4510B" />
+  <link rel="stylesheet" href="./styles.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Are my messages or photos saved on any server?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. Everything runs 100% locally in your browser. Neither your message, your secret key, nor any photo you attach is ever uploaded, logged, or stored on a server."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How safe is the encryption when I add a secret key?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Messages locked with a key are encrypted on your device using AES 256 GCM with PBKDF2 SHA 256 key derivation (120,000 iterations). Without the exact key, nobody can read the message, emotion, or photo."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What happens if I leave the secret key blank?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Leaving the key blank creates an open cipher code so your receiver can watch the animation right away without typing a passphrase. The data still lives only inside the code or link you share."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is my uploaded photo kept private?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. Your photo is sampled on a local HTML canvas inside your device memory and converted into ASCII text characters. The original image file never leaves your browser."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can the receiver access the encoder from my share link?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. Shared links open a dedicated receiver view containing only the decoder and the terminal experience, keeping the flow clean and focused on your message."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How do Time capsule and Burn after reading work?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Time capsule seals the unlock time inside the code until the target hour arrives. Burn after reading dissolves the message into ASCII ash after one view and blocks reopening on that browser."
+        }
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <div id="root"></div>
+  <script defer src="./app.bundle.js"></script>
+</body>
+</html>

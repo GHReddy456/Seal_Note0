@@ -76,4 +76,12 @@ await esbuild.build({
 
 const jsStat = await fs.stat(outJs);
 const cssStat = await fs.stat(path.join(distDir, 'styles.css'));
+
+// 4. Copy index.html & 404.html into standalone dist/ output directory for Vercel static hosting
+for (const htmlFile of ['index.html', '404.html']) {
+  const rawHtml = await fs.readFile(path.join(rootDir, htmlFile), 'utf8');
+  const distHtml = rawHtml.replace(/\.\/dist\//g, './');
+  await fs.writeFile(path.join(distDir, htmlFile), distHtml, 'utf8');
+}
+
 console.log(`Built dist/app.bundle.js (${jsStat.size} bytes) and dist/styles.css (${cssStat.size} bytes)`);

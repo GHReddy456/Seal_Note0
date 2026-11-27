@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const distDir = path.resolve(__dirname, '..', 'dist');
 const PORT = Number(process.env.PORT || 3456);
 
 const MIME_TYPES = {
@@ -27,8 +28,8 @@ const server = http.createServer(async (req, res) => {
     let relPath = decodeURIComponent(reqUrl.pathname);
     if (relPath === '/') relPath = '/index.html';
 
-    const filePath = path.resolve(__dirname, `.${relPath}`);
-    if (!filePath.startsWith(__dirname + path.sep) && filePath !== path.join(__dirname, 'index.html')) {
+    const filePath = path.resolve(distDir, `.${relPath}`);
+    if (!filePath.startsWith(distDir + path.sep) && filePath !== path.join(distDir, 'index.html')) {
       res.writeHead(403);
       res.end('Forbidden');
       return;
@@ -48,7 +49,7 @@ const server = http.createServer(async (req, res) => {
         return;
       }
       try {
-        const html404 = await fs.readFile(path.join(__dirname, '404.html'));
+        const html404 = await fs.readFile(path.join(distDir, '404.html'));
         res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(html404);
       } catch {
