@@ -1,16 +1,19 @@
 :root {
-  --bg: #000000;
-  --surface-1: #181818;
-  --surface-2: #1f1f1f;
-  --surface-3: #272727;
-  --border: #313131;
-  --text: #f5f5f5;
-  --muted: #a1a1aa;
+  --bg: #0b0e15;
+  --surface-1: #141925;
+  --surface-2: #1b2233;
+  --surface-3: #242d42;
+  --surface-input: #0e131d;
+  --border: rgba(226, 232, 240, 0.16);
+  --border-strong: rgba(226, 232, 240, 0.28);
+  --text: #f8fafc;
+  --muted: #b6c2d6;
+  --placeholder: #7d8ca6;
   --accent: #ff5e8a;
   --secondary: #ffd166;
-  --glow: rgba(255, 94, 138, 0.25);
-  --tint: rgba(255, 94, 138, 0.08);
-  --shadow-tint: 0 20px 48px rgba(19, 18, 9, 0.65);
+  --glow: rgba(255, 94, 138, 0.34);
+  --tint: rgba(255, 94, 138, 0.11);
+  --shadow-tint: 0 20px 50px rgba(4, 7, 15, 0.65);
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --dur-color: 300ms;
   --dur-move: 500ms;
@@ -36,12 +39,22 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Subtle surface grain overlay (flat dark aesthetic, no gradients) */
+.ambient-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 14% 12%, var(--tint), transparent 46%),
+    radial-gradient(circle at 86% 24%, rgba(76, 201, 240, 0.09), transparent 44%);
+  transition: background var(--dur-move) var(--ease);
+  z-index: 0;
+}
+
 .grain-overlay {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  opacity: 0.035;
+  opacity: 0.03;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   z-index: 1;
 }
@@ -55,8 +68,8 @@ body.crt-enabled::after {
     to bottom,
     rgba(255, 255, 255, 0) 0px,
     rgba(255, 255, 255, 0) 2px,
-    rgba(0, 0, 0, 0.16) 3px,
-    rgba(0, 0, 0, 0.16) 4px
+    rgba(0, 0, 0, 0.08) 3px,
+    rgba(0, 0, 0, 0.08) 4px
   );
   z-index: 50;
 }
@@ -67,7 +80,7 @@ body.crt-enabled::after {
   top: -48px;
   z-index: 100;
   background: var(--accent);
-  color: #000000;
+  color: #07090e;
   padding: 8px 12px;
   border-radius: 8px;
   font-size: 14px;
@@ -80,7 +93,6 @@ body.crt-enabled::after {
   top: 16px;
 }
 
-/* Unified focus rings across all controls */
 button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
@@ -94,7 +106,7 @@ a:focus-visible {
   width: 15px;
   height: 15px;
   stroke: currentColor;
-  stroke-width: 1.5;
+  stroke-width: 1.6;
   stroke-linecap: round;
   stroke-linejoin: round;
   fill: none;
@@ -109,20 +121,20 @@ a:focus-visible {
 /* Floating translucent top bar */
 .topbar {
   position: sticky;
-  top: 16px;
+  top: 12px;
   z-index: 20;
   max-width: 1200px;
-  margin: 16px auto 0;
-  padding: 8px 16px;
+  margin: 12px auto 0;
+  padding: 10px 16px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  background: rgba(24, 24, 24, 0.86);
-  border: 1px solid var(--border);
+  background: rgba(20, 25, 37, 0.88);
+  border: 1px solid var(--border-strong);
   border-radius: 12px;
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(14px);
 }
 
 .brand {
@@ -142,7 +154,7 @@ a:focus-visible {
   height: 8px;
   border-radius: 9999px;
   background: var(--accent);
-  box-shadow: 0 0 10px var(--glow);
+  box-shadow: 0 0 12px var(--accent);
   animation: pulseDot 2.4s var(--ease) infinite;
 }
 
@@ -157,7 +169,8 @@ a:focus-visible {
   font-size: 16px;
   line-height: 24px;
   letter-spacing: 0.08em;
-  color: var(--text);
+  color: var(--accent);
+  text-shadow: 0 0 14px var(--glow);
 }
 
 .brand-sub {
@@ -168,7 +181,7 @@ a:focus-visible {
 
 .mode-tabs {
   display: inline-flex;
-  background: var(--bg);
+  background: var(--surface-input);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 4px;
@@ -199,7 +212,8 @@ a:focus-visible {
 
 .tab-btn.active {
   background: var(--accent);
-  color: #000000;
+  color: #07090e;
+  box-shadow: 0 0 18px var(--glow);
 }
 
 .topbar-controls {
@@ -213,7 +227,7 @@ a:focus-visible {
   gap: 6px;
   background: var(--surface-2);
   border: 1px solid var(--border);
-  color: var(--muted);
+  color: var(--text);
   font-family: var(--font-mono);
   font-size: 12px;
   line-height: 16px;
@@ -221,11 +235,11 @@ a:focus-visible {
   padding: 8px 12px;
   border-radius: 8px;
   cursor: pointer;
-  transition: border-color var(--dur-color) var(--ease), color var(--dur-color) var(--ease), transform var(--dur-color) var(--ease);
+  transition: border-color var(--dur-color) var(--ease), background-color var(--dur-color) var(--ease), transform var(--dur-color) var(--ease);
 }
 
 .icon-btn:hover {
-  color: var(--text);
+  background: var(--surface-3);
   border-color: var(--accent);
 }
 
@@ -241,7 +255,6 @@ a:focus-visible {
   padding: 24px 16px 64px;
 }
 
-/* Outer panel radius 16px, optical bottom padding 32px */
 .panel {
   background: var(--surface-1);
   border: 1px solid var(--border);
@@ -268,9 +281,9 @@ a:focus-visible {
   letter-spacing: 0.08em;
   color: var(--accent);
   margin-bottom: 8px;
+  font-weight: 600;
 }
 
-/* Hero heading left-to-right gradient (#FFFFFF -> #9B9B9B) */
 .hero-strip h1 {
   margin: 0 0 8px;
   font-size: 30px;
@@ -278,7 +291,7 @@ a:focus-visible {
   font-weight: 700;
   letter-spacing: -0.025em;
   text-wrap: balance;
-  background: linear-gradient(90deg, #ffffff 0%, #9b9b9b 100%);
+  background: linear-gradient(90deg, #ffffff 0%, #cbd5e1 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -309,7 +322,7 @@ a:focus-visible {
   line-height: 20px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  color: var(--text);
+  color: var(--secondary);
 }
 
 .hero-badge-sub {
@@ -420,21 +433,27 @@ label {
 textarea,
 input {
   width: 100%;
-  background: var(--bg);
+  background: var(--surface-input);
   border: 1px solid var(--border);
   border-radius: 8px;
   color: var(--text);
-  padding: 8px 12px;
+  padding: 10px 12px;
   font-family: var(--font-sans);
   font-size: 14px;
   line-height: 20px;
-  transition: border-color var(--dur-color) var(--ease);
+  transition: border-color var(--dur-color) var(--ease), background-color var(--dur-color) var(--ease);
+}
+
+textarea::placeholder,
+input::placeholder {
+  color: var(--placeholder);
 }
 
 textarea:focus,
 input:focus {
   outline: none;
   border-color: var(--accent);
+  background: #0b0f18;
 }
 
 .mono-input {
@@ -463,7 +482,7 @@ input:focus {
 .peek-btn {
   background: var(--surface-3);
   border: 1px solid var(--border);
-  color: var(--muted);
+  color: var(--text);
   font-family: var(--font-mono);
   font-size: 12px;
   line-height: 16px;
@@ -471,11 +490,10 @@ input:focus {
   border-radius: 8px;
   cursor: pointer;
   flex-shrink: 0;
-  transition: color var(--dur-color) var(--ease), border-color var(--dur-color) var(--ease), transform var(--dur-color) var(--ease);
+  transition: border-color var(--dur-color) var(--ease), background-color var(--dur-color) var(--ease), transform var(--dur-color) var(--ease);
 }
 
 .peek-btn:hover {
-  color: var(--text);
   border-color: var(--accent);
 }
 
@@ -484,7 +502,6 @@ input:focus {
 }
 
 /* ==================== SPECIAL MODES & PHOTO BOXES ==================== */
-/* Outer radius 12px, padding 12px; inner card radius 4px (12 - 8) or 8px where gap=4px */
 .special-modes-box,
 .photo-attach-box {
   background: var(--surface-1);
@@ -541,7 +558,7 @@ input:focus {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  background: var(--bg);
+  background: var(--surface-input);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 12px;
@@ -551,14 +568,15 @@ input:focus {
 }
 
 .burn-toggle-card:has(input:checked) {
-  border-color: var(--accent);
+  border-color: #ff9248;
+  box-shadow: 0 0 18px rgba(255, 146, 72, 0.2);
 }
 
 .burn-toggle-card input {
   width: 16px;
   height: 16px;
   margin: 2px 0 0;
-  accent-color: var(--accent);
+  accent-color: #ff9248;
   flex-shrink: 0;
 }
 
@@ -566,7 +584,7 @@ input:focus {
   font-size: 14px;
   line-height: 20px;
   font-weight: 600;
-  color: var(--text);
+  color: #ffd166;
 }
 
 .burn-sub {
@@ -591,7 +609,7 @@ input:focus {
 .photo-preview-wrap {
   display: flex;
   justify-content: center;
-  background: var(--bg);
+  background: #080b12;
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 8px;
@@ -620,7 +638,7 @@ input:focus {
 }
 
 .photo-ctrl select {
-  background: var(--bg);
+  background: var(--surface-input);
   border: 1px solid var(--border);
   color: var(--text);
   border-radius: 6px;
@@ -677,7 +695,7 @@ input:focus {
   padding: 12px;
   cursor: pointer;
   color: var(--text);
-  transition: transform var(--dur-move) var(--ease), border-color var(--dur-color) var(--ease), background-color var(--dur-color) var(--ease);
+  transition: transform var(--dur-move) var(--ease), border-color var(--dur-color) var(--ease), box-shadow var(--dur-color) var(--ease), background-color var(--dur-color) var(--ease);
 }
 
 .emotion-card:hover {
@@ -692,6 +710,7 @@ input:focus {
 .emotion-card.selected {
   background: var(--surface-3);
   border-color: var(--card-accent, var(--accent));
+  box-shadow: 0 0 22px var(--card-glow, var(--glow));
 }
 
 .emotion-card-head {
@@ -722,17 +741,17 @@ input:focus {
   font-size: 14px;
 }
 
-/* Concentric inner radius: 12 - 8 ≈ 4px */
 .emotion-mini-art {
   margin: 0;
   padding: 8px;
   border-radius: 4px;
-  background: var(--bg);
+  background: #0a0d14;
   border: 1px solid var(--border);
   font-family: var(--font-mono);
   font-size: 12px;
   line-height: 16px;
   color: var(--card-accent, var(--accent));
+  text-shadow: 0 0 8px var(--card-glow, var(--glow));
   white-space: pre;
   text-align: center;
 }
@@ -745,10 +764,11 @@ input:focus {
 
 /* ==================== LIVE MINI ASCII PREVIEW ==================== */
 .mini-preview-card {
-  background: var(--bg);
-  border: 1px solid var(--border);
+  background: #080b12;
+  border: 1px solid var(--border-strong);
   border-radius: 12px;
   overflow: hidden;
+  box-shadow: 0 12px 32px rgba(4, 7, 15, 0.55), 0 0 24px var(--tint);
 }
 
 .mini-preview-bar {
@@ -777,12 +797,13 @@ input:focus {
   height: 8px;
   border-radius: 9999px;
   background: #27c93f;
+  box-shadow: 0 0 8px #27c93f;
 }
 
 .mini-action-btn {
   background: var(--surface-3);
-  border: 1px solid var(--border);
-  color: var(--text);
+  border: 1px solid var(--accent);
+  color: var(--accent);
   font-family: var(--font-mono);
   font-size: 12px;
   line-height: 16px;
@@ -790,12 +811,12 @@ input:focus {
   padding: 4px 12px;
   border-radius: 6px;
   cursor: pointer;
-  transition: border-color var(--dur-color) var(--ease), color var(--dur-color) var(--ease), transform var(--dur-color) var(--ease);
+  transition: background-color var(--dur-color) var(--ease), color var(--dur-color) var(--ease), transform var(--dur-color) var(--ease);
 }
 
 .mini-action-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  background: var(--accent);
+  color: #07090e;
 }
 
 .mini-action-btn:active {
@@ -806,7 +827,7 @@ input:focus {
   display: flex;
   justify-content: center;
   padding: 12px 8px;
-  background: var(--bg);
+  background: #080b12;
   overflow: hidden;
 }
 
@@ -825,15 +846,16 @@ input:focus {
 
 .primary-btn {
   background: var(--accent);
-  color: #000000;
+  color: #07090e;
   border: none;
   border-radius: 8px;
-  padding: 8px 16px;
+  padding: 10px 18px;
   font-family: var(--font-sans);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 16px;
   line-height: 24px;
   cursor: pointer;
+  box-shadow: 0 6px 24px var(--glow);
   transition: filter var(--dur-color) var(--ease), transform var(--dur-color) var(--ease), opacity var(--dur-color) var(--ease);
 }
 
@@ -854,7 +876,7 @@ input:focus {
 .secondary-btn {
   background: var(--surface-3);
   color: var(--text);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: 8px;
   padding: 8px 12px;
   font-family: var(--font-mono);
@@ -862,7 +884,7 @@ input:focus {
   line-height: 16px;
   font-weight: 500;
   cursor: pointer;
-  transition: border-color var(--dur-color) var(--ease), transform var(--dur-color) var(--ease);
+  transition: border-color var(--dur-color) var(--ease), background-color var(--dur-color) var(--ease), transform var(--dur-color) var(--ease);
 }
 
 .secondary-btn:hover {
@@ -899,17 +921,18 @@ input:focus {
 }
 
 .error-text {
-  color: #ff6b6b;
+  color: #ff7b7b;
   font-size: 12px;
   line-height: 16px;
   font-family: var(--font-mono);
 }
 
 .output-box {
-  background: var(--bg);
+  background: var(--surface-input);
   border: 1px solid var(--accent);
   border-radius: 12px;
   padding: 16px;
+  box-shadow: 0 0 24px var(--tint);
 }
 
 .output-header {
@@ -923,6 +946,7 @@ input:focus {
   margin: 0 0 12px;
   padding: 12px;
   background: var(--surface-1);
+  border: 1px solid var(--border);
   border-radius: 8px;
   font-family: var(--font-mono);
   font-size: 12px;
@@ -1020,12 +1044,13 @@ input:focus {
   padding: 12px;
   color: var(--text);
   cursor: pointer;
-  transition: transform var(--dur-move) var(--ease), border-color var(--dur-color) var(--ease);
+  transition: transform var(--dur-move) var(--ease), border-color var(--dur-color) var(--ease), box-shadow var(--dur-color) var(--ease);
 }
 
 .sample-card:hover {
   transform: translateY(-2px);
   border-color: var(--sample-accent, var(--accent));
+  box-shadow: 0 0 18px var(--sample-glow, var(--glow));
 }
 
 .sample-card:active {
@@ -1061,11 +1086,11 @@ input:focus {
 }
 
 .terminal-window {
-  background: var(--bg);
-  border: 1px solid var(--border);
+  background: #080b12;
+  border: 1px solid var(--border-strong);
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: var(--shadow-tint);
+  box-shadow: var(--shadow-tint), 0 0 42px var(--tint);
 }
 
 .terminal-chrome {
@@ -1149,7 +1174,7 @@ input:focus {
   justify-content: center;
   align-items: center;
   padding: 24px 16px;
-  background: var(--bg);
+  background: #080b12;
   overflow-x: auto;
 }
 
@@ -1170,29 +1195,29 @@ input:focus {
   font-size: clamp(9.5px, 1.45vw, 15px);
   line-height: 1.25;
   letter-spacing: 0.04em;
-  color: #cbd5e1;
+  color: #e2e8f0;
   user-select: none;
   transition: opacity var(--dur-move) var(--ease), filter var(--dur-move) var(--ease);
 }
 
 .ascii-screen.dimmed {
-  opacity: 0.24;
+  opacity: 0.26;
   filter: blur(1px);
 }
 
 /* Terminal cell color palette */
-.c-dim { color: #52525b; }
-.c-muted { color: #71717a; }
-.c-star { color: #d4d4d8; }
-.c-bright { color: #ffffff; text-shadow: 0 0 8px rgba(255, 255, 255, 0.75); }
-.c-white { color: #f4f4f5; }
-.c-rose { color: #ff6b9d; text-shadow: 0 0 8px rgba(255, 107, 157, 0.45); }
-.c-gold { color: #ffd166; text-shadow: 0 0 8px rgba(255, 209, 102, 0.45); }
-.c-cyan { color: #4cc9f0; text-shadow: 0 0 8px rgba(76, 201, 240, 0.45); }
-.c-blue { color: #74b3ff; text-shadow: 0 0 7px rgba(116, 179, 255, 0.35); }
-.c-violet { color: #c084fc; text-shadow: 0 0 8px rgba(192, 132, 252, 0.45); }
-.c-orange { color: #ff9248; text-shadow: 0 0 8px rgba(255, 146, 72, 0.5); }
-.c-green { color: #5cd85a; text-shadow: 0 0 7px rgba(92, 216, 90, 0.35); }
+.c-dim { color: #64748b; }
+.c-muted { color: #94a3b8; }
+.c-star { color: #e2e8f0; }
+.c-bright { color: #ffffff; text-shadow: 0 0 8px rgba(255, 255, 255, 0.8); }
+.c-white { color: #f8fafc; }
+.c-rose { color: #ff6b9d; text-shadow: 0 0 8px rgba(255, 107, 157, 0.5); }
+.c-gold { color: #ffd166; text-shadow: 0 0 8px rgba(255, 209, 102, 0.5); }
+.c-cyan { color: #4cc9f0; text-shadow: 0 0 8px rgba(76, 201, 240, 0.5); }
+.c-blue { color: #74b3ff; text-shadow: 0 0 7px rgba(116, 179, 255, 0.4); }
+.c-violet { color: #c084fc; text-shadow: 0 0 8px rgba(192, 132, 252, 0.5); }
+.c-orange { color: #ff9248; text-shadow: 0 0 8px rgba(255, 146, 72, 0.55); }
+.c-green { color: #5cd85a; text-shadow: 0 0 7px rgba(92, 216, 90, 0.4); }
 
 .reveal-overlay {
   position: absolute;
@@ -1211,11 +1236,11 @@ input:focus {
 
 .reveal-card {
   width: min(640px, 100%);
-  background: rgba(24, 24, 24, 0.94);
+  background: rgba(20, 25, 37, 0.94);
   border: 1px solid var(--accent);
   border-radius: 12px;
   padding: 24px;
-  box-shadow: var(--shadow-tint);
+  box-shadow: var(--shadow-tint), 0 0 36px var(--glow);
   backdrop-filter: blur(10px);
 }
 
@@ -1286,7 +1311,7 @@ input:focus {
 
 .burn-btn {
   background: #ff6b4a;
-  color: #000000;
+  color: #07090e;
   border: none;
   border-radius: 8px;
   padding: 8px 12px;
