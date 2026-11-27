@@ -211,6 +211,60 @@
           </div>
         </div>
       </div>
+
+      <section class="faq-section" aria-labelledby="faqHeading">
+        <div class="faq-header">
+          <div class="eyebrow">100% private · zero servers</div>
+          <h2 id="faqHeading">Privacy and safety</h2>
+          <p class="faq-subtitle">
+            Everything happens inside your browser. Your messages, secret keys, and photos never touch a database.
+          </p>
+        </div>
+
+        <div class="faq-grid">
+          <article class="faq-item">
+            <h3>Are my messages or photos saved on any server?</h3>
+            <p>
+              No. Everything runs 100% locally in your browser. Neither your message, your secret key, nor any photo you attach is ever uploaded, logged, or stored on a server.
+            </p>
+          </article>
+
+          <article class="faq-item">
+            <h3>How safe is the encryption when I add a secret key?</h3>
+            <p>
+              Messages locked with a key are encrypted on your device using AES 256 GCM with PBKDF2 SHA 256 key derivation (120,000 iterations). Without the exact key, nobody can read the message, emotion, or photo.
+            </p>
+          </article>
+
+          <article class="faq-item">
+            <h3>What happens if I leave the secret key blank?</h3>
+            <p>
+              Leaving the key blank creates an open cipher code so your receiver can watch the animation right away without typing a passphrase. The data still lives only inside the code or link you share.
+            </p>
+          </article>
+
+          <article class="faq-item">
+            <h3>Is my uploaded photo kept private?</h3>
+            <p>
+              Yes. Your photo is sampled on a local HTML canvas inside your device memory and converted into ASCII text characters. The original image file never leaves your browser.
+            </p>
+          </article>
+
+          <article class="faq-item">
+            <h3>Can the receiver access the encoder from my share link?</h3>
+            <p>
+              No. Shared links open a dedicated receiver view containing only the decoder and the terminal experience, keeping the flow clean and focused on your message.
+            </p>
+          </article>
+
+          <article class="faq-item">
+            <h3>How do Time capsule and Burn after reading work?</h3>
+            <p>
+              Time capsule seals the unlock time inside the code until the target hour arrives. Burn after reading dissolves the message into ASCII ash after one view and blocks reopening on that browser.
+            </p>
+          </article>
+        </div>
+      </section>
     </section>
 
     <!-- ==================== DECODE VIEW ==================== -->
